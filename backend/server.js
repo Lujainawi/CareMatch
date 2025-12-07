@@ -1,0 +1,34 @@
+// backend/server.js
+const express = require('express');
+const path = require('path');
+const db = require('./db');
+const app = express();
+const PORT = 3000;
+
+// Middleware to parse JSON bodies from incoming requests
+app.use(express.json());
+
+// Serve frontend files (HTML, CSS, JS) as static files
+app.use(express.static(path.join(__dirname, '../frontend')));
+
+// Test route – to check if the backend is running
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', message: 'CareMatch backend is running' });
+});
+
+// Test route – checks if Node can connect to MySQL
+app.get('/api/test-db', async (req, res) => {
+  try {
+    // Simple query just to test the connection
+    const [rows] = await db.query('SELECT * FROM users LIMIT 5');
+    res.json({ status: 'ok', db: rows });
+  } catch (err) {
+    console.error('DB test error:', err);
+    res.status(500).json({ status: 'error', message: 'Database connection failed' });
+  }
+});
+
+// Start listening for incoming HTTP requests
+app.listen(PORT, () => {
+  console.log(`Server listening on http://localhost:${PORT}`);
+});

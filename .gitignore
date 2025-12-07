@@ -1,0 +1,10 @@
+# Ignore all node_modules folders in the project
+node_modules/
+
+# Environment files (passwords, tokens, secrets)
+.env
+.env.local
+backend/.env
+
+# Log files (optional but useful to ignore)
+npm-debug.log*
