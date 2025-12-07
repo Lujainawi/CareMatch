@@ -20,10 +20,10 @@ app.get('/api/health', (req, res) => {
 app.get('/api/test-db', async (req, res) => {
   try {
     // Simple query just to test the connection
-    const [rows] = await db.query('SELECT * FROM users LIMIT 5');
+    const [rows] = await db.query('SELECT 1 AS test');
     res.json({ status: 'ok', db: rows });
   } catch (err) {
-    console.error('DB test error:', err);
+    console.error('DB test error:', err.code, err.message);
     res.status(500).json({ status: 'error', message: 'Database connection failed' });
   }
 });
