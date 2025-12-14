@@ -1,0 +1,53 @@
+/* Reusable Card Component */
+.card{
+    background: rgba(255,255,255,0.35);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  
+  .card__img{
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    display: block;
+    background: rgba(0,0,0,0.06);
+  }
+  
+  .card__body{
+    padding: 14px 14px 16px;
+  }
+  
+  .card__meta{
+    margin: 0 0 6px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  
+  .card__title{
+    margin: 0 0 6px;
+    font-size: 16px;
+  }
+  
+  .card__tags{
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  
+  .card__desc{
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--ink);
+  }
+  
+  .card__btn{
+    width: 100%;
+  }
+  
+  /* Request-specific sizing for carousel */
+  .card--request{
+    flex: 0 0 240px;
+    scroll-snap-align: start;
+  }  

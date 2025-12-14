@@ -3,7 +3,7 @@ const express = require('express');
 const path = require('path');
 const db = require('./db');
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware to parse JSON bodies from incoming requests
 app.use(express.json());
@@ -27,6 +27,14 @@ app.get('/api/test-db', async (req, res) => {
     res.status(500).json({ status: 'error', message: 'Database connection failed' });
   }
 });
+
+// Belong to Contact Us in Section 6
+app.post("/api/contact", (req, res) => {
+  // Later: save to DB / send email
+  console.log("Contact message:", req.body);
+  res.json({ status: "ok" });
+});
+
 
 // Start listening for incoming HTTP requests
 app.listen(PORT, () => {

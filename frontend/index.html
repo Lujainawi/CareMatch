@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CareMatch</title>
+  <link rel="stylesheet" href="css/index.css" />
+  <link rel="stylesheet" href="css/components/cards.css" />  
+</head>
+<body>
+
+    <!--  Header  -->
+    <header class="site-header">
+        <div class="container header-inner">
+          <a class="login-link" href="login.html">Log-in</a>
+    
+          <nav class="main-nav" aria-label="Main navigation">
+            <a class="nav-link" href="#home">Home</a>
+            <a class="nav-link" href="#about">About</a>
+            <a class="nav-link" href="#get-involved">Get Involved</a>
+            <a class="nav-link" href="#donate">Donate</a>
+          </nav>
+        </div>
+      </header>
+
+      <main id="home">
+        <!-- Section: Welcome -->
+        <section class="welcome">
+          <div class="container welcome-inner">
+            <div class="welcome-text">
+              <h1 class="welcome-title">CareMatch</h1>
+              <p class="welcome-desc">
+                Every request is a story - connecting people who need support with donors and trusted organizations,
+                quickly, respectfully, and securely, so every match can make a real difference.
+              </p>
+            </div>
+    
+            <div class="welcome-cta">
+              <a class="btn" href="#get-involved">Get Involved</a>
+            </div>
+          </div>
+    
+          <div class="container welcome-images">
+            <figure class="img-card">
+              <img src="images/children.jpeg" alt="Playing with children" />
+            </figure>
+    
+            <figure class="img-card">
+              <img src="images/yoga.jpeg" alt="Sport with Elders" />
+            </figure>
+          </div>
+        </section>
+
+        <!-- Section 2: Data -->
+        <section class="data" id="data">
+            <div class="container">
+              <h2 class="section-title">A quick look at platform activity</h2>
+          
+              <div class="stats-grid" aria-label="Site statistics">
+                <article class="stat-card">
+                  <div class="stat-value" data-key="requests" aria-live="polite">1200</div>
+                  <p class="stat-label">Total requests handled</p>
+                </article>
+          
+                <article class="stat-card">
+                  <div class="stat-value" data-key="donors" aria-live="polite">850</div>
+                  <p class="stat-label">Active donors</p>
+                </article>
+          
+                <article class="stat-card">
+                  <div class="stat-value" data-key="success" aria-live="polite">95%</div>
+                  <p class="stat-label">Successful matches</p>
+                </article>
+          
+                <article class="stat-card">
+                  <div class="stat-value" data-key="response" aria-live="polite">2h 30m</div>
+                  <p class="stat-label">Avg response time</p>
+                </article>
+              </div>
+            </div>
+          </section>
+
+        <!-- Section 3: Testimonials -->
+        <section class="testimonials" id="testimonials" aria-labelledby="testimonials-title">
+            <div class="container">
+              <h2 class="section-title section-title--light" id="testimonials-title">Testimonials</h2>
+          
+              <div class="carousel" role="region" aria-roledescription="carousel" aria-label="Testimonials" tabindex="0">
+                <button class="carousel-btn prev" type="button" aria-label="Previous testimonial">‹</button>
+          
+                <ul class="carousel-track" aria-live="polite">
+                  <li class="slide is-active" role="group" aria-roledescription="slide" aria-label="1 of 5">
+                    <p class="t-author">Anne Frank</p>
+                    <p class="t-quote">“No one has ever become poor by giving”</p>
+                  </li>
+          
+                  <li class="slide" role="group" aria-roledescription="slide" aria-label="2 of 5" aria-hidden="true">
+                    <p class="t-author">Mahatma Gandhi</p>
+                    <p class="t-quote">“The best way to find yourself is to lose yourself in the service of others”</p>
+                  </li>
+          
+                  <li class="slide" role="group" aria-roledescription="slide" aria-label="3 of 5" aria-hidden="true">
+                    <p class="t-author">Winston Churchill</p>
+                    <p class="t-quote">“We make a living by what we get, but we make a life by what we give”</p>
+                  </li>
+          
+                  <li class="slide" role="group" aria-roledescription="slide" aria-label="4 of 5" aria-hidden="true">
+                    <p class="t-author">Mother Teresa</p>
+                    <p class="t-quote">“Not all of us can do great things. But we can do small things with great love”</p>
+                  </li>
+
+                  <li class="slide" role="group" aria-roledescription="slide" aria-label="5 of 5" aria-hidden="true">
+                    <p class="t-author">Nelson Mandela</p>
+                    <p class="t-quote">“What counts in life is not the mere fact that we have lived. It is what difference we have made”</p>
+                  </li>
+                </ul>
+          
+                <button class="carousel-btn next" type="button" aria-label="Next testimonial">›</button>
+              </div>
+          
+              <div class="carousel-dots" aria-label="Choose testimonial">
+                <button class="dot is-active" type="button" aria-label="Go to testimonial 1" aria-current="true"></button>
+                <button class="dot" type="button" aria-label="Go to testimonial 2"></button>
+                <button class="dot" type="button" aria-label="Go to testimonial 3"></button>
+                <button class="dot" type="button" aria-label="Go to testimonial 4"></button>
+                <button class="dot" type="button" aria-label="Go to testimonial 5"></button>
+              </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Requests -->
+        <section class="requests" id="requests" aria-labelledby="requests-title">
+            <div class="container requests-head">
+              <h2 class="section-title" id="requests-title">Requests that need you</h2>
+          
+              <div class="requests-controls" aria-label="Requests carousel controls">
+                <button class="carousel-btn" type="button" data-req="prev" aria-label="Previous requests">‹</button>
+                <button class="carousel-btn" type="button" data-req="next" aria-label="Next requests">›</button>
+              </div>
+            </div>
+          
+            <div class="container">
+              <div class="requests-viewport" role="region" aria-label="Requests carousel">
+                <ul class="requests-track slide-auto" id="requestsTrack">
+                  <!-- Cards are rendered by JS -->
+                </ul>
+              </div>
+            </div>
+          </section>
+
+
+        <!-- Section 5: Our Organization -->
+        <section class="org" id="get-involved" aria-labelledby="org-title">
+            <div class="container">
+              <h2 class="org-title" id="org-title">Our Organization</h2>
+          
+              <div class="org-grid">
+                <article class="org-item">
+                  <div class="org-line"></div>
+                  <h3 class="org-name">Carmel Elders Association</h3>
+                  <p class="org-desc">
+                    Supporting older adults in the Carmel area through community programs, social activities, and services that help seniors stay active, connected, and respected.
+                  </p>
+                  <div class="org-line"></div>
+                </article>
+          
+                <article class="org-item">
+                  <div class="org-line"></div>
+                  <h3 class="org-name">Hurfeish Druze Children’s Village</h3>
+                  <p class="org-desc">
+                    A children’s village established to provide a supportive home and education framework for children and teens from the Druze community, with a family-style care model.
+                  </p>
+                  <div class="org-line"></div>
+                </article>
+          
+                <article class="org-item">
+                  <div class="org-line"></div>
+                  <h3 class="org-name">Leket Israel</h3>
+                  <p class="org-desc">
+                    Israel’s national food rescue organization: saving healthy surplus food and delivering it to people in need through a wide network of nonprofit partners.
+                  </p>
+                  <div class="org-line"></div>
+                </article>
+          
+                <article class="org-item">
+                  <div class="org-line"></div>
+                  <h3 class="org-name">Latet</h3>
+                  <p class="org-desc">
+                    An Israeli humanitarian aid organization working to reduce poverty and nutritional insecurity, operating national-scale food assistance and community support programs.
+                  </p>
+                  <div class="org-line"></div>
+                </article>
+              </div>
+            </div>
+          </section>
+
+        <!-- Section 6: Contact Us -->
+        <section class="contact" id="contact" aria-labelledby="contact-title">
+            <div class="container">
+              <h2 class="contact-title" id="contact-title">Get in Touch</h2>
+              <p class="contact-sub">Send us a message and we’ll get back to you as soon as possible.</p>
+          
+              <div class="contact-grid">
+                <form class="contact-form" id="contactForm">
+                
+                  <label class="field">
+                    <span>Full name *</span>
+                    <input name="fullName" type="text" required autocomplete="name" />
+                  </label>
+                
+                  <label class="field">
+                    <span>Email *</span>
+                    <input name="email" type="email" required autocomplete="email" />
+                  </label>
+                
+                  <label class="field">
+                    <span>Phone (optional)</span>
+                    <input name="phone" type="tel" autocomplete="tel" />
+                  </label>
+                
+                  <label class="field">
+                    <span>Message *</span>
+                    <textarea name="message" rows="4" required></textarea>
+                  </label>
+                
+                  <button class="btn contact-btn" type="submit" id="contactSubmit">Submit</button>
+                
+                  <p class="form-status" id="contactStatus" role="status"></p>
+                </form>                
+          
+                <!-- empty column to match the airy layout like the screenshot -->
+                <div></div>
+              </div>
+          
+              <figure class="contact-image">
+                <img src="images/ContactUs.jpg" alt="Hands planting a small seedling" />
+              </figure>
+            </div>
+          </section>
+
+        <!-- Footer -->
+        <footer class="site-footer" id="footer">
+            <div class="container footer-grid">
+              <div class="footer-left">
+                <h3 class="footer-brand">Care Match</h3>
+          
+                <div class="footer-contact">
+                  <p class="footer-line">Phone: <a href="tel:+972501234567">+972 50-123-4567</a></p>
+                  <p class="footer-line">Email: <a href="mailto:carematch.info@gmail.com">carematch.info@gmail.com</a></p>
+                  <p class="footer-line">Location: Galilee, Israel</p>
+                </div>
+              </div>
+          
+              <div class="footer-right">
+                <a class="footer-link" href="privacy.html">Privacy Policy</a>
+                <a class="footer-link" href="accessibility.html">Accessibility Statement</a>
+          
+                <small class="footer-copy">© <span id="year"></span> CareMatch</small>
+              </div>
+            </div>
+          </footer>
+      </main>
+    
+    <script type="module" src="js/index.js"></script>
+    
+</body>
+</html>
