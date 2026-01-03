@@ -137,6 +137,12 @@
           email: email.value.trim(),
           password: password.value,
         });
+
+        
+        if (status === 403 && data?.code === "EMAIL_NOT_VERIFIED") {
+          formError.textContent = "Please verify your email before logging in.";
+          return;
+        }
   
         if (!ok) {
           // Generic message to avoid revealing whether email exists (OWASP)
@@ -155,7 +161,7 @@
         sessionStorage.setItem("maskedPhone", data?.maskedPhone || "");
   
         // Next page: choose SMS/Email + resend timer + code verify
-        window.location.href = "mfa.html";
+        window.location.href = "../index.html";
       } catch (err) {
         // Network/Unexpected
         formError.textContent = "Something went wrong. Please try again.";
