@@ -5,6 +5,7 @@ const db = require('./db');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+const { sendVerificationEmail } = require('./mailer');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -113,8 +114,7 @@ app.post('/api/auth/signup', async (req, res) => {
       [userId, verifyToken, code_hash]
     );
 
-    // DEV ONLY: "send email" (later replace with Nodemailer)
-    console.log(`[DEV] Verification code for ${email}: ${code}`);
+    await sendVerificationEmail(email, code);
 
      return res.status(201).json({ ok: true, verifyToken });
   } catch (err) {
@@ -205,7 +205,7 @@ app.post('/api/auth/email/resend', async (req, res) => {
       [newHash, rows[0].id]
     );
 
-    console.log(`[DEV] Resent verification code for ${email}: ${newCode}`);
+    await sendVerificationEmail(email, newCode);
 
     return res.json({ ok: true });
   } catch (err) {
