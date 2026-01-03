@@ -1,0 +1,267 @@
+/* Page background */
+.auth-page {
+    background: #f6eaea;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Center the card */
+  .auth-main {
+    flex: 1;
+    display: grid;
+    place-items: center;
+    padding: 48px 16px;
+  }
+  
+  /* Card */
+  .auth-card {
+    width: min(520px, 92vw);
+    background: transparent;
+    text-align: center;
+    padding: 12px 12px 24px;
+  }
+  
+  .auth-header {
+    margin-bottom: 18px;
+  }
+  
+  .auth-title {
+    font-size: clamp(40px, 4vw, 56px);
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    margin: 0 0 6px 0;
+    color: #3f3647;
+  }
+  
+  .auth-subtitle {
+    margin: 0;
+    color: #6b6272;
+    font-size: 14px;
+  }
+  
+  .auth-link {
+    color: #3f3647;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  
+  .auth-form {
+    margin-top: 12px;
+  }
+  
+  /* Fields */
+  .field {
+    text-align: left;
+    margin: 14px auto;
+    width: min(360px, 100%);
+  }
+  
+  .label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #3f3647;
+    margin-bottom: 6px;
+  }
+  
+  .input {
+    width: 100%;
+    border: 1px solid #5a5161;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 12px 12px;
+    font-size: 15px;
+    color: #3f3647;
+    outline: none;
+  }
+  
+  .input:focus {
+    border-color: #3f3647;
+    box-shadow: 0 0 0 3px rgba(63, 54, 71, 0.15);
+  }
+  
+  .input--invalid {
+    border-color: #c0392b;
+    box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.12);
+  }
+  
+  .help {
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: #6b6272;
+  }
+  
+  .error {
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: #c0392b;
+    min-height: 16px;
+  }
+  
+  .form-error {
+    width: min(360px, 100%);
+    margin: 10px auto 14px;
+    color: #c0392b;
+    font-size: 13px;
+    min-height: 18px;
+    text-align: center;
+  }
+  
+  /* Password toggle (soft text button) */
+  .password-wrap {
+    position: relative;
+  }
+  
+  .password-wrap .input {
+    padding-right: 70px;
+  }
+  
+  .password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+  
+    border: none;
+    background: transparent;
+  
+    padding: 6px 8px;
+    cursor: pointer;
+  
+    font-size: 13px;
+    font-weight: 600;
+    color: #3f3647;
+  
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    opacity: 0.85;
+  }
+  
+  .password-toggle:hover {
+    opacity: 1;
+  }
+  
+  /* Keyboard focus indicator (recommended) */
+  .password-toggle:focus-visible {
+    outline: 2px solid rgba(63, 54, 71, 0.55);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+  
+  /* Main button */
+  .btn-primary {
+    width: min(360px, 100%);
+    padding: 14px 16px;
+    border: none;
+    background: #3f3647;
+    color: #fff;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  
+  .btn-primary:hover {
+    filter: brightness(1.05);
+  }
+  
+  .btn-primary:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(63, 54, 71, 0.18);
+  }
+  
+  /* ===== Modal ===== */
+  .modal[aria-hidden="true"] {
+    display: none;
+  }
+  
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+  }
+  
+  .modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(20, 16, 24, 0.45);
+  }
+  
+  .modal-dialog {
+    position: relative;
+    width: min(520px, 92vw);
+    background: #f6eaea;
+    border: 1px solid rgba(63, 54, 71, 0.25);
+    padding: 18px 18px 16px;
+    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.18);
+  }
+  
+  .modal-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+  
+    border: none;
+    background: transparent;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    color: #3f3647;
+  
+    padding: 6px 8px;
+  }
+  
+  .modal-close:focus-visible {
+    outline: 2px solid rgba(63, 54, 71, 0.55);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+  
+  .modal-title {
+    margin: 0 0 6px 0;
+    font-size: 22px;
+    color: #3f3647;
+  }
+  
+  .modal-desc {
+    margin: 0 0 12px 0;
+    color: #6b6272;
+    font-size: 14px;
+  }
+  
+  .field--modal {
+    width: 100%;
+    margin: 10px 0 8px;
+  }
+  
+  .modal-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 10px;
+  }
+  
+  .btn-primary--small {
+    width: auto;
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+  
+  .btn-link {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: #3f3647;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    padding: 8px 0;
+    opacity: 0.9;
+  }
+  
+  .btn-link:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    text-decoration: none;
+  }  

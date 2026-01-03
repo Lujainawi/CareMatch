@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log In | CareMatch</title>
+
+    <link rel="stylesheet" href="../css/index.css" />
+    <link rel="stylesheet" href="../css/login.css" />
+</head>
+<body class="auth-page">
+    <header class="site-header">
+        <div class="container header-inner">
+          <a class="login-link active" href="login.html" aria-current="page">Log-in</a>
+          <nav class="main-nav" aria-label="Main navigation">
+            <a class="nav-link" href="../index.html">Home</a>
+            <a class="nav-link" href="about.html">About</a>
+            <a class="nav-link" href="get_involved.html">Get Involved</a>
+            <a class="nav-link" href="donate.html">Donate</a>
+          </nav>          
+        </div>
+    </header>
+
+    <main class="auth-main">
+        <section class="auth-card" aria-labelledby="login-title">
+            <header class="auth-header">
+                <h1 id="login-title" class="auth-title">Log In</h1>
+                <p class="auth-subtitle">
+                  New to this site?
+                  <a class="auth-link" href="signUp.html">Sign Up</a>
+                </p>
+            </header>
+
+            <form id="loginForm" class="auth-form" novalidate>
+                <!-- EMAIL -->
+                <div class="field">
+                  <label class="label" for="email">Email <span aria-hidden="true">*</span></label>
+        
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    class="input"
+                    placeholder="Email"
+                    autocomplete="username"
+                    required
+                    aria-describedby="emailHelp emailError"
+                  />
+        
+                  <p id="emailHelp" class="help">Use the email you registered with.</p>
+                  <p id="emailError" class="error" role="alert" aria-live="polite"></p>
+                </div>
+        
+                <!-- PASSWORD -->
+                <div class="field">
+                  <label class="label" for="password">Password <span aria-hidden="true">*</span></label>
+        
+                  <div class="password-wrap">
+                    <input
+                      id="password"
+                      name="password"
+                      type="password"
+                      class="input"
+                      placeholder="Password"
+                      autocomplete="current-password"
+                      required
+                      minlength="8"
+                      aria-describedby="passwordHelp passwordError"
+                    />
+        
+                    <button
+                      id="togglePassword"
+                      class="password-toggle"
+                      type="button"
+                      aria-pressed="false"
+                      aria-controls="password"
+                    >
+                      Show
+                    </button>
+                  </div>
+        
+                  <p id="passwordHelp" class="help">At least 8 characters.</p>
+                  <p id="passwordError" class="error" role="alert" aria-live="polite"></p>
+                </div>
+        
+                <div class="auth-row">
+                  <a class="auth-link" href="forgotPassword.html">Forgot password?</a>
+                </div>
+        
+                <!-- FORM (GENERIC) ERROR -->
+                <p id="formError" class="form-error" role="alert" aria-live="polite"></p>
+        
+                <button type="submit" class="btn-primary">Log In</button>
+            </form>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer" id="footer">
+        <div class="container footer-grid">
+          <div class="footer-left">
+            <h3 class="footer-brand">Care Match</h3>
+      
+            <div class="footer-contact">
+              <p class="footer-line">Phone: <a href="tel:+972501234567">+972 50-123-4567</a></p>
+              <p class="footer-line">Email: <a href="mailto:carematch.info@gmail.com">carematch.info@gmail.com</a></p>
+              <p class="footer-line">Location: Galilee, Israel</p>
+            </div>
+          </div>
+      
+          <div class="footer-right">
+            <a class="footer-link" href="privacy.html">Privacy Policy</a>
+            <a class="footer-link" href="accessibility.html">Accessibility Statement</a>
+      
+            <small class="footer-copy">© <span id="year"></span> CareMatch</small>
+          </div>
+        </div>
+    </footer>
+
+    <script defer src="../js/login.js"></script>
+</body>
+</html>

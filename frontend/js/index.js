@@ -127,7 +127,7 @@ function animateNumber(el, from, to, formatter, duration = 700) {
 // 1) Demo data (replace later with DB/API)
 const demoRequests = [
   {
-    image: "images/ziknei-hacarmel.jpg",
+    image: "images/the_carmel_elders.jpeg",
     imageAlt: "Elderly support",
     region: "Carmel",
     nameType: "NGO",
@@ -138,7 +138,7 @@ const demoRequests = [
     moreHref: "results.html"
   },
   {
-    image: "images/horfeish-children.jpg",
+    image: "images/druze_children.jpeg",
     imageAlt: "Children support",
     region: "North",
     nameType: "Orphanage",
@@ -160,7 +160,7 @@ const demoRequests = [
     moreHref: "results.html"
   },
   {
-    image: "images/latet.jpg",
+    image: "images/latet.jpeg",
     imageAlt: "Humanitarian aid",
     region: "Israel",
     nameType: "NGO",
@@ -204,7 +204,7 @@ const demoRequests = [
     moreHref: "results.html"
   },
   {
-    image: "images/safehome.jpg",
+    image: "images/sos_children.jpeg",
     imageAlt: "Family support",
     region: "Acre",
     nameType: "NGO",

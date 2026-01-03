@@ -98,11 +98,6 @@
     line-height: 1.5;
   }
   
-  .welcome-cta{
-    display: flex;
-    justify-content: flex-end;
-  }
-  
   .btn{
     display: inline-flex;
     align-items: center;
@@ -159,7 +154,6 @@
       grid-template-columns: 1fr;
       align-items: start;
     }
-    .welcome-cta{ justify-content: flex-start; }
     .welcome-images{ grid-template-columns: 1fr; }
   }
 
