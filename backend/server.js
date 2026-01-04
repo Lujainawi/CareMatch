@@ -5,12 +5,24 @@ const db = require('./db');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+const rateLimit = require('express-rate-limit');
+
+
 const { sendVerificationEmail } = require('./mailer');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware to parse JSON bodies from incoming requests
 app.use(express.json());
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // limit each IP to 20 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/api/auth', authLimiter);
 
 //Session middleware (cookie based sessions)
 app.use(session({
