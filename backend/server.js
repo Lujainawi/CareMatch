@@ -190,7 +190,13 @@ app.post('/api/auth/email/verify', async (req, res) => {
     await db.query('UPDATE email_verifications SET used_at = NOW() WHERE id = ?', [rec.id]);
     await db.query('UPDATE users SET email_verified_at = NOW() WHERE id = ?', [rec.user_id]);
 
-    return res.json({ ok: true });
+    // Create session now (so Signup+Verify goes straight to chat)
+    req.session.regenerate((err) => {
+      if (err) return res.status(500).json({ message: 'Something went wrong.' });
+      req.session.userId = rec.user_id;
+      return res.json({ ok: true });
+    });
+
   } catch (err) {
     console.error('verify error:', err);
     return res.status(500).json({ message: 'Something went wrong.' });

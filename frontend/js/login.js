@@ -257,7 +257,7 @@
       }
 
       // If server ever returns no MFA (not expected), fallback:
-      window.location.href = "../index.html";
+      window.location.href = "../chat.html";
     } catch (err) {
       // Network/Unexpected
       formError.textContent = "Something went wrong. Please try again.";
@@ -307,7 +307,7 @@
 
       sessionStorage.removeItem("mfaToken");
       closeLoginModal();
-      window.location.href = "../index.html";
+      window.location.href = "../chat.html";
     } catch (err) {
       if (loginModalMsg) loginModalMsg.textContent = "Something went wrong. Please try again.";
     } finally {
