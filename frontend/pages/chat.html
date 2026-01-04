@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat | CareMatch</title>
+
+  <!-- your global styles -->
+  <link rel="stylesheet" href="../css/index.css" />
+  <link rel="stylesheet" href="../css/chat.css" />
+</head>
+
+<body class="chat-body">
+  <!-- Header -->
+  <header class="chat-header">
+    <div class="container chat-header-inner">
+      <a class="chat-brand" href="../index.html">CareMatch</a>
+
+      <nav class="chat-top-actions" aria-label="Chat navigation">
+        <div class="chat-mode" role="group" aria-label="Mode">
+          <button id="modeChat" class="mode-btn is-active" type="button" aria-pressed="true">Conversation</button>
+          <button id="modeQuick" class="mode-btn" type="button" aria-pressed="false">Quick Form</button>
+        </div>
+
+        <div class="chat-controls" role="group" aria-label="Actions">
+          <button id="backBtn" class="chip-btn" type="button">Back</button>
+          <button id="restartBtn" class="chip-btn" type="button">Restart chat</button>
+          <button id="endBtn" class="chip-btn chip-btn--primary" type="button">End Chat &amp; Continue</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="chat-page">
+    <div class="container chat-shell">
+      <!-- (Optional) progress/hint; hidden by CSS -->
+      <div class="chat-meta" aria-hidden="true">
+        <p id="progressText" class="chat-progress"></p>
+        <p id="hintText" class="chat-hint"></p>
+      </div>
+
+      <!-- Conversation -->
+      <section id="chatView" class="chat-view" aria-label="Conversation">
+        <div class="chat-card">
+          <div id="chatLog" class="chat-log" aria-live="polite" aria-label="Conversation messages"></div>
+
+          <button id="jumpBtn" class="jump-latest" type="button" hidden aria-label="Jump to latest">
+            ↓ Jump to latest
+          </button>
+
+          <div id="choiceTools" class="choice-tools" hidden></div>
+
+          <div id="choices" class="chat-choices" aria-label="Choices"></div>
+
+          <form id="textForm" class="chat-input is-disabled" autocomplete="off">
+            <label class="sr-only" for="textInput">Your message</label>
+            <input id="textInput" type="text" placeholder="Choose an option below…" />
+            <button class="btn" type="submit">Send</button>
+          </form>
+          <input id="imageInput" type="file" accept="image/*" hidden />
+          
+        </div>
+      </section>
+
+      <!-- Quick Form (separate view) -->
+      <section id="quickView" class="quick-view" hidden aria-label="Quick form">
+        <div class="quick-head">
+          <h2 class="quick-title">Quick Form</h2>
+          <p class="quick-sub">Fill this quickly and jump to results.</p>
+        </div>
+
+        <form id="quickForm" class="quick-form">
+          <div class="q-row">
+            <label for="qIntent">What do you want to do?</label>
+            <select id="qIntent">
+              <option value="donor">I want to donate</option>
+              <option value="requester">I need help (coming soon)</option>
+            </select>
+          </div>
+
+          <div class="q-grid">
+            <div class="q-row">
+              <label for="qDonationType">Donation type</label>
+              <select id="qDonationType">
+                <option value="money">Donate money</option>
+                <option value="volunteer">Volunteer (in person)</option>
+              </select>
+            </div>
+
+            <div class="q-row">
+              <label for="qRegion">Region</label>
+              <select id="qRegion">
+                <option value="">Any</option>
+                <option value="north">North</option>
+                <option value="center">Center</option>
+                <option value="south">South</option>
+                <option value="jerusalem">Jerusalem</option>
+                <option value="east">East</option>
+              </select>
+            </div>
+
+            <div class="q-row">
+              <label for="qCategory">Organization type</label>
+              <select id="qCategory">
+                <option value="">Any</option>
+                <option value="ngo">NGO</option>
+                <option value="school">School</option>
+                <option value="hospital">Hospital</option>
+                <option value="nursing_home">Nursing home</option>
+                <option value="orphanage">Orphanage</option>
+              </select>
+            </div>
+
+            <div class="q-row">
+              <label for="qTopic">Topic</label>
+              <select id="qTopic">
+                <option value="">Any</option>
+                <option value="health">Health</option>
+                <option value="education">Education</option>
+                <option value="arts">Arts</option>
+                <option value="technology">Technology</option>
+                <option value="basic_needs">Basic needs</option>
+                <option value="social">Social</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="q-actions">
+            <button class="btn" type="submit">Show results</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- End chat dialog -->
+      <dialog id="endDialog" class="cm-dialog" aria-label="End chat confirmation">
+        <p style="margin:0; font-weight:900;">End chat and continue to results?</p>
+        <p style="margin:8px 0 0; color: var(--muted);">You can still adjust filters on the results page.</p>
+        <div class="dialog-actions">
+          <button id="endCancelBtn" class="btn" type="button">Cancel</button>
+          <button id="endConfirmBtn" class="btn" type="button">Continue</button>
+        </div>
+      </dialog>
+    </div>
+  </main>
+
+  <script src="../js/chat.js"></script>
+</body>
+</html>

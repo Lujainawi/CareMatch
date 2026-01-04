@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Results | CareMatch</title>
+
+  <link rel="stylesheet" href="../css/index.css" />
+  <link rel="stylesheet" href="../css/components/cards.css" />
+  <link rel="stylesheet" href="../css/result.css" />
+</head>
+
+<body class="results-body">
+  <header class="chat-header">
+    <div class="container chat-header-inner">
+      <a class="chat-brand" href="../index.html">CareMatch</a>
+
+      <nav class="chat-top-actions" aria-label="Results navigation">
+        <div class="chat-controls" role="group" aria-label="Actions">
+          <a class="chip-btn" href="chat.html">Back to chat</a>
+          <button id="logoutBtn" class="chip-btn" type="button">Logout</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="results-page">
+    <div class="container">
+      <section class="results-head">
+        <h1 class="results-title">Results</h1>
+        <p id="resultsSub" class="results-sub"></p>
+
+        <div id="activeFilters" class="filters-row" aria-label="Active filters"></div>
+      </section>
+
+      <section id="mySection" class="results-section" hidden>
+        <h2 class="section-title">My requests</h2>
+        <p id="myEmpty" class="empty" hidden>No requests yet.</p>
+        <ul id="myList" class="cards-grid" aria-label="My requests list"></ul>
+      </section>
+
+      <section class="results-section">
+        <h2 id="allTitle" class="section-title">All open requests</h2>
+        <p id="allEmpty" class="empty" hidden>No matching requests found.</p>
+        <ul id="allList" class="cards-grid" aria-label="All requests list"></ul>
+      </section>
+    </div>
+  </main>
+
+  <script src="../js/result.js"></script>
+</body>
+</html>

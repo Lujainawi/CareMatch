@@ -423,7 +423,136 @@ app.post('/api/auth/logout', (req, res) => {
   });
 });
 
+// --------------------------
+// REQUESTS: create + list
+// --------------------------
+function requireAuth(req, res, next) {
+  if (!req.session.userId) return res.status(401).json({ message: "Not authenticated." });
+  next();
+}
 
+const ALLOWED = {
+  help_type: ["money", "volunteer", "service", "product"],
+  category: ["nursing_home", "ngo", "school", "hospital", "orphanage", "private", "other"],
+  target_group: ["elderly", "children", "youth", "families", "patients", "refugees", "general"],
+  topic: ["health", "education", "arts", "technology", "basic_needs", "social", "other"],
+  region: ["north", "center", "south", "jerusalem", "east"],
+  status: ["open", "in_progress", "closed"],
+};
+
+// POST /api/requests  (when user chooses "I need help")
+app.post("/api/requests", requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId;
+
+    const help_type = String(req.body?.help_type || "").trim();
+    const category = String(req.body?.category || "").trim();
+    const target_group = String(req.body?.target_group || "").trim();
+    const topic = String(req.body?.topic || "").trim();
+    const region = String(req.body?.region || "").trim();
+    const title = String(req.body?.title || "").trim();
+    const full_description = String(req.body?.full_description || "").trim();
+
+    let amount_needed = req.body?.amount_needed;
+    const is_money_request = help_type === "money" ? 1 : 0;
+
+    if (!ALLOWED.help_type.includes(help_type)) return res.status(400).json({ message: "Invalid help_type." });
+    if (!ALLOWED.category.includes(category)) return res.status(400).json({ message: "Invalid category." });
+    if (!ALLOWED.target_group.includes(target_group)) return res.status(400).json({ message: "Invalid target_group." });
+    if (!ALLOWED.topic.includes(topic)) return res.status(400).json({ message: "Invalid topic." });
+    if (!ALLOWED.region.includes(region)) return res.status(400).json({ message: "Invalid region." });
+    if (!title || title.length > 255) return res.status(400).json({ message: "Invalid title." });
+    if (!full_description) return res.status(400).json({ message: "Invalid description." });
+
+    if (is_money_request) {
+      const n = Number(amount_needed);
+      // חשוב: לא לאפשר שלילי (הערת תקינות):contentReference[oaicite:5]{index=5}
+      if (!Number.isFinite(n) || n <= 0) return res.status(400).json({ message: "Invalid amount_needed." });
+      amount_needed = n;
+    } else {
+      amount_needed = null;
+    }
+
+    // short_summary optional: take first 160 chars from description
+    const short_summary = full_description.slice(0, 160);
+
+    const [result] = await db.query(
+      `INSERT INTO requests
+        (user_id, help_type, category, target_group, topic, region, title, short_summary, full_description, amount_needed, is_money_request, status, created_at)
+       VALUES
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', NOW())`,
+      [
+        userId,
+        help_type,
+        category,
+        target_group,
+        topic,
+        region,
+        title,
+        short_summary,
+        full_description,
+        amount_needed,
+        is_money_request,
+      ]
+    );
+
+    return res.status(201).json({ ok: true, id: result.insertId });
+  } catch (err) {
+    console.error("POST /api/requests error:", err);
+    return res.status(500).json({ message: "Something went wrong." });
+  }
+});
+
+// GET /api/requests?region=&topic=&category=&help_type=&status=&mine=1
+app.get("/api/requests", requireAuth, async (req, res) => {
+  try {
+    const { region, topic, category, help_type, status, mine } = req.query;
+
+    let sql = `
+      SELECT id, user_id, help_type, category, target_group, topic, region,
+             title, short_summary, full_description, amount_needed, status, created_at
+      FROM requests
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (mine === "1") {
+      sql += " AND user_id = ?";
+      params.push(req.session.userId);
+    }
+    if (region && ALLOWED.region.includes(region)) {
+      sql += " AND region = ?";
+      params.push(region);
+    }
+    if (topic && ALLOWED.topic.includes(topic)) {
+      sql += " AND topic = ?";
+      params.push(topic);
+    }
+    if (category && ALLOWED.category.includes(category)) {
+      sql += " AND category = ?";
+      params.push(category);
+    }
+    if (help_type && ALLOWED.help_type.includes(help_type)) {
+      sql += " AND help_type = ?";
+      params.push(help_type);
+    }
+    if (status && ALLOWED.status.includes(status)) {
+      sql += " AND status = ?";
+      params.push(status);
+    } else {
+      // default: only open requests
+      sql += " AND status = 'open'";
+    }
+
+    sql += " ORDER BY created_at DESC LIMIT 200";
+
+    const [rows] = await db.query(sql, params);
+    return res.json({ ok: true, rows });
+  } catch (err) {
+    console.error("GET /api/requests error:", err);
+    return res.status(500).json({ message: "Something went wrong." });
+  }
+});
 
 // Start listening for incoming HTTP requests
 app.listen(PORT, () => {
