@@ -80,6 +80,18 @@ function generateVerifyToken() {
   return crypto.randomBytes(32).toString('hex');
 }
 
+function generateMfaToken() {
+  return crypto.randomBytes(32).toString('hex');
+} 
+
+function maskEmail(email) {
+  const [name, domain] = String(email || '').split("@");
+  if (!domain) return '';
+  const shown = name.slice(0, 2);
+  return `${shown}***@${domain}`;
+}
+
+
 /* --------------------------
    AUTH: SIGNUP + EMAIL VERIFY
    Requires table: email_verifications
@@ -265,13 +277,120 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(403).json({ code: 'EMAIL_NOT_VERIFIED' });
     }
 
-    req.session.userId = user.id;
-    return res.json({ ok: true });
+    // Create MFA challenge
+    const code = generate6DigitCode();
+    const code_hash = await bcrypt.hash(code, 10);
+    const mfaToken = generateMfaToken();
+
+    await db.query(
+      `INSERT INTO mfa_challenges (user_id, mfa_token, channel, code_hash, expires_at, attempts, used_at, created_at)
+       VALUES (?, ?, 'email', ?, DATE_ADD(NOW(), INTERVAL 10 MINUTE), 0, NULL, NOW())`,
+      [user.id, mfaToken, code_hash]
+    );
+
+    await sendVerificationEmail(user.email, code);
+
+    return res.json({
+      ok: true,
+      mfaRequired: true,
+      mfaToken,
+      channels: ['email'],
+      maskedEmail: maskEmail(user.email),
+    });
   } catch (err) {
     console.error('login error:', err);
     return res.status(500).json({ message: 'Something went wrong.' });
   }
 });
+// POST /api/auth/mfa/verify  (OTP ok -> create session)
+app.post('/api/auth/mfa/verify', async (req, res) => {
+  try {
+    const mfaToken = String(req.body?.mfaToken || '').trim();
+    const code = String(req.body?.code || '').trim();
+
+    if (!mfaToken || !/^\d{6}$/.test(code)) {
+      return res.status(400).json({ message: 'Invalid input.' });
+    }
+
+    const [rows] = await db.query(
+      `SELECT id, user_id, code_hash, expires_at, attempts, used_at
+       FROM mfa_challenges
+       WHERE mfa_token = ?
+       LIMIT 1`,
+      [mfaToken]
+    );
+
+    if (!rows.length) return res.status(400).json({ message: 'Invalid code.' });
+
+    const rec = rows[0];
+    if (rec.used_at) return res.status(400).json({ message: 'Invalid code.' });
+
+    const [expCheck] = await db.query('SELECT NOW() > ? AS expired', [rec.expires_at]);
+    if (expCheck[0].expired) return res.status(400).json({ message: 'Code expired.' });
+
+    if (rec.attempts >= 5) return res.status(429).json({ message: 'Too many attempts.' });
+
+    const ok = await bcrypt.compare(code, rec.code_hash);
+
+    await db.query('UPDATE mfa_challenges SET attempts = attempts + 1 WHERE id = ?', [rec.id]);
+
+    if (!ok) return res.status(400).json({ message: 'Invalid code.' });
+
+    await db.query('UPDATE mfa_challenges SET used_at = NOW() WHERE id = ?', [rec.id]);
+
+    // Create session only now
+    req.session.regenerate((err) => {
+      if (err) return res.status(500).json({ message: 'Something went wrong.' });
+      req.session.userId = rec.user_id;
+      return res.json({ ok: true });
+    });
+  } catch (err) {
+    console.error('mfa verify error:', err);
+    return res.status(500).json({ message: 'Something went wrong.' });
+  }
+});
+
+// POST /api/auth/mfa/resend
+app.post('/api/auth/mfa/resend', async (req, res) => {
+  try {
+    const mfaToken = String(req.body?.mfaToken || '').trim();
+    if (!mfaToken) return res.status(400).json({ message: 'Invalid input.' });
+
+    const [rows] = await db.query(
+      `SELECT id, user_id, used_at
+       FROM mfa_challenges
+       WHERE mfa_token = ?
+       LIMIT 1`,
+      [mfaToken]
+    );
+
+    if (!rows.length) return res.status(400).json({ message: 'Cannot resend.' });
+    if (rows[0].used_at) return res.status(400).json({ message: 'Already verified.' });
+
+    const [userRows] = await db.query('SELECT email FROM users WHERE id = ? LIMIT 1', [rows[0].user_id]);
+    if (!userRows.length) return res.status(400).json({ message: 'Cannot resend.' });
+
+    const email = userRows[0].email;
+
+    const newCode = generate6DigitCode();
+    const newHash = await bcrypt.hash(newCode, 10);
+
+    await db.query(
+      `UPDATE mfa_challenges
+       SET code_hash = ?, attempts = 0, expires_at = DATE_ADD(NOW(), INTERVAL 10 MINUTE)
+       WHERE id = ?`,
+      [newHash, rows[0].id]
+    );
+
+    await sendVerificationEmail(email, newCode);
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('mfa resend error:', err);
+    return res.status(500).json({ message: 'Something went wrong.' });
+  }
+});
+
 
 // GET /api/auth/me
 app.get('/api/auth/me', (req, res) => {
