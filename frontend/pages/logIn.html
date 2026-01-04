@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="../css/index.css" />
     <link rel="stylesheet" href="../css/login.css" />
 </head>
+
+
 <body class="auth-page">
     <header class="site-header">
         <div class="container header-inner">
@@ -116,6 +118,40 @@
           </div>
         </div>
     </footer>
+    <!-- Login OTP Verification Modal -->
+<div id="loginVerifyModal" class="modal" role="dialog" aria-modal="true"
+     aria-labelledby="loginVerifyTitle" aria-describedby="loginVerifyDesc"
+     aria-hidden="true">
+  <div class="modal__overlay" data-close="true"></div>
+
+  <div class="modal__panel" role="document">
+    <button type="button" class="modal__close" aria-label="Close" data-close="true">×</button>
+
+    <h2 id="loginVerifyTitle">Verify your login</h2>
+    <p id="loginVerifyDesc">
+      We sent a 6-digit code to <strong id="loginMaskedEmail"></strong>.
+    </p>
+
+    <div class="field">
+      <label for="loginCode">Verification code</label>
+      <input id="loginCode" name="loginCode" inputmode="numeric" autocomplete="one-time-code"
+             maxlength="6" placeholder="123456" />
+      <div id="loginCodeError" class="field__error" aria-live="polite"></div>
+    </div>
+
+    <div id="loginModalMsg" class="form__error" aria-live="polite"></div>
+
+    <div class="modal__actions">
+      <button type="button" id="loginVerifyBtn" class="btn">Verify</button>
+
+      <button type="button" id="loginResendBtn" class="btn btn--ghost" disabled>
+        Resend <span id="loginResendTimer"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+    
 
     <script defer src="../js/login.js"></script>
 </body>
