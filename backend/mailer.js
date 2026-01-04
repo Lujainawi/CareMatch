@@ -4,7 +4,7 @@ function makeTransporter() {
     return nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: Number(process.env.SMTP_PORT || 587),
-        secure: String(process.env.SMTP_SECURE || "false") === "true" , // true for 465, false for other ports
+        secure: String(process.env.SMTP_SECURE || "false") === "true", // true for 465, false for other ports
         auth: {
             user: process.env.SMTP_USER,
             pass: process.env.SMTP_PASS,
@@ -13,8 +13,13 @@ function makeTransporter() {
 }
 
 async function sendVerificationEmail(toEmail, code) {
+    if (!toEmail || !String(toEmail).trim()) {
+        throw new Error("Missing recipient email (toEmail)");
+    }
+
     const transporter = makeTransporter();
-    
+
+
     const from = process.env.MAIL_FROM || process.env.SMTP_USER;
 
     const subject = "CareMatch: Your verification code";
@@ -28,4 +33,4 @@ async function sendVerificationEmail(toEmail, code) {
     });
 }
 
-module.exports = {sendVerificationEmail};
+module.exports = { sendVerificationEmail };

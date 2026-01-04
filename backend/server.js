@@ -26,16 +26,16 @@ app.use('/api/auth', authLimiter);
 
 //Session middleware (cookie based sessions)
 app.use(session({
-    name: 'carematch.sid',
-    secret:process.env.SESSION_SECRET || 'dev_secret_change_me',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: false,
-        maxAge: 1000 * 60 * 60 * 24 * 7, //7 days
-    },
+  name: 'carematch.sid',
+  secret: process.env.SESSION_SECRET || 'dev_secret_change_me',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: false,
+    maxAge: 1000 * 60 * 60 * 24 * 7, //7 days
+  },
 }));
 
 // Serve frontend files (HTML, CSS, JS) as static files
@@ -82,7 +82,7 @@ function generateVerifyToken() {
 
 function generateMfaToken() {
   return crypto.randomBytes(32).toString('hex');
-} 
+}
 
 function maskEmail(email) {
   const [name, domain] = String(email || '').split("@");
@@ -100,22 +100,22 @@ function maskEmail(email) {
 
 // POST /api/auth/signup
 app.post('/api/auth/signup', async (req, res) => {
-  try{
+  try {
     const full_name = String(req.body?.full_name || '').trim();
     const email = normalizeEmail(req.body?.email);
     const password = String(req.body?.password || '');
 
-    if(!full_name || !email || !password || password.length < 8){
+    if (!full_name || !email || !password || password.length < 8) {
       return res.status(400).json({ status: 'error', message: 'Invalid input.' });
-  }
-  // Check if email already exists
+    }
+    // Check if email already exists
     const [existing] = await db.query('SELECT id FROM users WHERE email = ? LIMIT 1', [email]);
-    if(existing.length){
-      return res.status(400).json({message: 'Signup failed.' });
+    if (existing.length) {
+      return res.status(400).json({ message: 'Signup failed.' });
     }
 
     // Hash the password
-    const password_hash = await bcrypt.hash(password, 10);  
+    const password_hash = await bcrypt.hash(password, 10);
 
     // Insert the new user into the database
     const [result] = await db.query(
@@ -140,7 +140,7 @@ app.post('/api/auth/signup', async (req, res) => {
 
     await sendVerificationEmail(email, code);
 
-     return res.status(201).json({ ok: true, verifyToken });
+    return res.status(201).json({ ok: true, verifyToken });
   } catch (err) {
     console.error('signup error:', err);
     return res.status(500).json({ message: 'Something went wrong.' });
@@ -288,7 +288,19 @@ app.post('/api/auth/login', async (req, res) => {
       [user.id, mfaToken, code_hash]
     );
 
-    await sendVerificationEmail(user.email, code);
+    const recipientEmail = user.email || email; // fallback to input email if needed
+
+    try {
+      await sendVerificationEmail(recipientEmail, code);
+    } catch (mailErr) {
+      console.error("send mail failed:", mailErr);
+
+      // חשוב: לא להשאיר challenge תקוע אם לא נשלח מייל
+      await db.query("DELETE FROM mfa_challenges WHERE mfa_token = ?", [mfaToken]);
+
+      return res.status(500).json({ message: "Could not send verification code. Please try again." });
+    }
+
 
     return res.json({
       ok: true,
