@@ -353,7 +353,7 @@
       // Verified -> go to login page
       sessionStorage.removeItem("verifyToken");
       closeModal();
-      window.location.href = "../chat.html";
+      window.location.href = "../pages/chat.html";
     } catch (err) {
       modalMsg && (modalMsg.textContent = "Something went wrong. Please try again.");
     } finally {
