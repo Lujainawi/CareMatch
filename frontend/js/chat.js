@@ -135,9 +135,14 @@ const AI_IMAGES_BY_TOPIC = {
     skipBtn.textContent = "Skip";
     skipBtn.addEventListener("click", () => {
       addMsg("Skip", "user");
+    
+      state.imageSource = null;
+      state.imageKey = null;
+      state.imageUrl = null;
+    
       choicesEl.classList.remove("is-image-grid");
       submitRequest();
-    });
+    });    
     skipRow.appendChild(skipBtn);
     choicesEl.appendChild(skipRow);
   }
@@ -882,14 +887,15 @@ scrollDownBtn.addEventListener("click", () => {
   
     const isOrg = state.requestFor === "org";
   
+    // -------- ORG: choose from default images --------
     if (isOrg) {
       addMsg("Last step: choose one of our default images (14 options).", "bot");
   
       setImageGrid(ORG_DEFAULT_IMAGES, (imgObj) => {
         addMsg(`Selected ${imgObj.key}`, "user");
-        state.imageSource = "internal";
+        state.imageSource = "internal";    
         state.imageKey = imgObj.key;
-        state.imageUrl = imgObj.src; // for preview/use in results if you want
+        state.imageUrl = imgObj.src;
   
         choicesEl.classList.remove("is-image-grid");
         submitRequest();
@@ -899,8 +905,9 @@ scrollDownBtn.addEventListener("click", () => {
       return;
     }
   
-    // Individual: Upload OR AI (limited)
+    // -------- INDIVIDUAL: choose upload / AI / skip --------
     addMsg("Would you like to add an image? (Optional)", "bot");
+  
     setChoices([
       {
         label: "Upload an image",
@@ -913,68 +920,99 @@ scrollDownBtn.addEventListener("click", () => {
         },
       },
       {
-        label: "Generate with AI (limited)",
-        onClick: () => {
-          addMsg("Generate with AI (limited)", "user");
-        
-          const topic = state.topic || "other";
-          const images = AI_IMAGES_BY_TOPIC[topic] || AI_IMAGES_BY_TOPIC.other;
-        
-          addMsg("Choose an AI image (limited to your topic).", "bot");
-        
-          setImageGrid(images, (imgObj) => {
-            addMsg(`Selected ${imgObj.label}`, "user");
-            state.imageSource = "ai_preset";
-            state.imageKey = imgObj.key;
-            state.imageUrl = imgObj.src; 
-        
-            choicesEl.classList.remove("is-image-grid");
+        label: "Generate with AI ",
+        onClick: async () => {
+          addMsg("Generate with AI (real)", "user");
+          addMsg("Generating image…", "bot");
+          try {
+            const topic = state.topic || "other";
+            const out = await generateAiImage(topic);
+      
+            state.imageSource = out.image_source; // "ai"
+            state.imageKey = out.image_key;
+            state.imageUrl = out.image_url;
+      
+            addMsg("Image generated ✅", "bot");
             submitRequest();
-          });
-
-          pushHistory(state);
-        },        
+          } catch (e) {
+            addMsg(String(e.message || "AI error. Try again."), "bot");
+            requesterImageOptional();
+          }
+        },
       },
       {
         label: "Skip",
         onClick: () => {
           addMsg("Skip", "user");
+          state.imageSource = null;
+          state.imageKey = null;
+          state.imageUrl = null;
+  
           submitRequest();
         },
       },
     ]);
-
+  
     pushHistory(state);
-  }  
+  }
+   
   
   if (imageInput) {
     imageInput.addEventListener("change", async () => {
       const file = imageInput.files && imageInput.files[0];
       if (!file) {
-        addMsg("No file selected. You can skip or try again.");
+        addMsg("No file selected. You can skip or try again.", "bot");
         requesterImageOptional();
         return;
       }
   
+      // revoke old blob preview
       if (state.imageUrl && String(state.imageUrl).startsWith("blob:")) {
         URL.revokeObjectURL(state.imageUrl);
       }
   
-      state.imageSource = "upload_pending";
-      state.imageUrl = URL.createObjectURL(file);
-
-      pushHistory(state);
+      state.imageSource = null;        
+      state.imageKey = null;
   
-      addMsg("Image selected (preview). We'll upload it to the server later.", "bot");
-      submitRequest();
+      const previewUrl = URL.createObjectURL(file);
+      state.imageUrl = previewUrl;
+  
+      addMsg("Image selected (preview only). To save an image with your request, please choose a default/AI image, or skip.", "bot");
+  
+      requesterImageOptional();
+  
+      pushHistory(state);
     });
   }
+
+  async function generateAiImage(topic) {
+    const res = await fetch("/api/images/generate", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ topic }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || "AI failed");
+    return data; // { image_url, image_source:"ai", image_key }
+  }  
+  
   
   async function submitRequest() {
     progressText.textContent = "Done";
     hintText.textContent = "";
   
-    addMsg("Publishing your request…");
+    addMsg("Publishing your request…", "bot");
+  
+    const mappedImageSource =
+      state.imageSource === "ai_preset" ? "ai" :
+      state.imageSource === "upload_pending" ? null :
+      state.imageSource || null;
+  
+    const isBlobUrl = state.imageUrl && String(state.imageUrl).startsWith("blob:");
+  
+    const image_url =
+      mappedImageSource && !isBlobUrl ? (state.imageUrl || null) : null;
   
     const payload = {
       help_type: state.helpType,
@@ -986,10 +1024,10 @@ scrollDownBtn.addEventListener("click", () => {
       full_description: state.fullDescription,
       amount_needed: state.helpType === "money" ? state.amountNeeded : null,
   
-      // optional future image fields
-      image_url: (state.imageSource === "internal" || state.imageSource === "ai_preset") ? state.imageUrl : null,
-      image_source: state.imageSource,
-      image_key: state.imageKey || null,
+      // ✅ image fields (optional)
+      image_url,
+      image_source: mappedImageSource,
+      image_key: mappedImageSource ? (state.imageKey || null) : null,
     };
   
     try {
@@ -1002,17 +1040,16 @@ scrollDownBtn.addEventListener("click", () => {
   
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        addMsg(err.message || "Could not publish the request. Please try again.");
+        addMsg(err.message || "Could not publish the request. Please try again.", "bot");
         return;
       }
   
-      addMsg("Your request is published. Redirecting to results…");
-      // show user’s requests + all requests in results (you can handle in result.js)
+      addMsg("Your request is published. Redirecting to results…", "bot");
       goToResults({ mode: "requester", mine: "1" });
     } catch (e) {
-      addMsg("Network error. Please try again.");
+      addMsg("Network error. Please try again.", "bot");
     }
-  }
+  }  
   
   /** ---- Buttons ---- */
   backBtn.addEventListener("click", () => {
@@ -1059,6 +1096,87 @@ scrollDownBtn.addEventListener("click", () => {
   
   
   /** Quick form toggle (UI only right now) */
+  let qImageSource = null; // "internal" | "ai" | "cloudinary" | null
+  let qImageKey = null;
+  let qImageUrl = null;
+
+  const qChooseDefaultImg = document.getElementById("qChooseDefaultImg");
+  const qChooseAiImg = document.getElementById("qChooseAiImg");
+  const qClearImg = document.getElementById("qClearImg");
+  const qImgPreview = document.getElementById("qImgPreview");
+  const qImgUpload = document.getElementById("qImgUpload");
+
+  function qSetPreview(url) {
+    if (!qImgPreview) return;
+    if (!url) {
+      qImgPreview.style.display = "none";
+      qImgPreview.src = "";
+      return;
+    }
+    qImgPreview.src = url;
+    qImgPreview.style.display = "block";
+  }
+
+  function isQuickOrg() {
+    return (qReqCategory?.value || "") !== "private";
+  }
+
+  function syncQuickImageActions() {
+    const isOrg = isQuickOrg();
+  
+    // Org -> only default
+    qChooseDefaultImg.disabled = false;
+    qChooseAiImg.disabled = isOrg; // disable for org
+    // אם תוסיפי Upload button - תעשי גם disabled = isOrg
+  
+    if (isOrg && qImageSource === "ai") {
+      qImageSource = null; qImageKey = null; qImageUrl = null;
+      qSetPreview(null);
+    }
+  }
+  qReqCategory?.addEventListener("change", syncQuickImageActions);
+  syncQuickImageActions();
+  
+  
+
+  qChooseDefaultImg?.addEventListener("click", () => {
+    openImgDialog(
+      ORG_DEFAULT_IMAGES,
+      (imgObj) => {
+        qImageSource = "internal";
+        qImageKey = imgObj.key;
+        qImageUrl = imgObj.src;
+        qSetPreview(qImageUrl);
+      },
+      () => {
+        qImageSource = null; qImageKey = null; qImageUrl = null;
+        qSetPreview(null);
+      }
+    );
+  });  
+  
+  qChooseAiImg?.addEventListener("click", async () => {
+    setQuickError("");
+    const topic = (qReqTopic?.value || "other").trim() || "other";
+    try {
+      const out = await generateAiImage(topic);
+      qImageSource = out.image_source; // "ai"
+      qImageKey = out.image_key;
+      qImageUrl = out.image_url;
+      qSetPreview(qImageUrl);
+    } catch (e) {
+      setQuickError(e.message || "AI generation failed.");
+    }
+  });
+  
+  
+  qClearImg?.addEventListener("click", () => {
+    qImageSource = null;
+    qImageKey = null;
+    qImageUrl = null;
+    qSetPreview(null);
+  })  
+
   modeChat.addEventListener("click", () => setMode("chat"));
   modeQuick.addEventListener("click", () => setMode("quick"));  
 
@@ -1076,12 +1194,13 @@ scrollDownBtn.addEventListener("click", () => {
           return;
         }
   
+        const cat = qCategory.value;
         const params = {
           mode: "donor",
           donation_type: "volunteer",
           region: qRegion.value || "",
-          category: qCategory.value || "",
           topic: qTopic.value || "",
+          category: (cat && cat !== "any") ? cat : "",
         };
   
         Object.keys(params).forEach((k) => {
@@ -1105,6 +1224,10 @@ scrollDownBtn.addEventListener("click", () => {
         topic: (qReqTopic.value || "").trim(),
         title: (qTitle.value || "").trim(),
         full_description: (qDescription.value || "").trim(),
+
+        image_source: qImageSource || null,  
+        image_key: qImageKey || null,
+        image_url: qImageUrl || null,
       };
   
       if (
@@ -1157,6 +1280,42 @@ scrollDownBtn.addEventListener("click", () => {
       }
     });
   }
+  
+
+
+  /* Quick Form - Dialog */ 
+const imgDialog = document.getElementById("imgDialog");
+const imgDialogGrid = document.getElementById("imgDialogGrid");
+const imgDialogCancel = document.getElementById("imgDialogCancel");
+const imgDialogSkip = document.getElementById("imgDialogSkip");
+
+function openImgDialog(images, onPick, onSkip) {
+  imgDialogGrid.innerHTML = "";
+
+  images.forEach((imgObj) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "img-choice";
+    btn.innerHTML = `
+      <img src="${imgObj.src}" alt="${imgObj.alt}">
+      <span>${imgObj.label || imgObj.key}</span>
+    `;
+    btn.addEventListener("click", () => {
+      imgDialog.close();
+      onPick(imgObj);
+    });
+    imgDialogGrid.appendChild(btn);
+  });
+
+  imgDialogCancel.onclick = () => imgDialog.close();
+  imgDialogSkip.onclick = () => {
+    imgDialog.close();
+    onSkip?.();
+  };
+
+  imgDialog.showModal();
+}
+
   
   
   /** ---- init ---- */

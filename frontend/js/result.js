@@ -102,10 +102,17 @@ async function requireLogin() {
   async function fetchRequests(queryParamsObj) {
     const qs = new URLSearchParams(queryParamsObj);
     const res = await fetch(`/api/requests?${qs.toString()}`, { credentials: "include" });
+  
+    if (res.status === 401) {
+      window.location.href = "logIn.html";
+      return [];
+    }
     if (!res.ok) throw new Error("Failed to load requests");
+  
     const data = await res.json();
     return data.rows || [];
   }
+  
   
   (async function init() {
     // await requireLogin();

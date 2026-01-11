@@ -7,13 +7,16 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 
+const fs = require("fs");
+const OpenAI = require("openai");
+
 
 const { sendVerificationEmail, sendPasswordResetEmail } = require('./mailer');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware to parse JSON bodies from incoming requests
-app.use(express.json());
+app.use(express.json({ limit: "200kb" }));
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -41,13 +44,78 @@ app.use(session({
   cookie: {
     httpOnly: true,
     sameSite: 'lax',
-    secure: false,
+    secure: process.env.NODE_ENV === "production",
     maxAge: 1000 * 60 * 60 * 24 * 7, //7 days
   },
 }));
 
 // Serve frontend files (HTML, CSS, JS) as static files
 app.use(express.static(path.join(__dirname, '../frontend')));
+
+// serve generated uploads
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+
+const aiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 6,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+const PROMPTS_BY_TOPIC = {
+  health: "A warm, hopeful illustration about healthcare support and community help. No text.",
+  education: "A bright illustration about learning support and school supplies. No text.",
+  arts: "A colorful illustration about arts activities for children. No text.",
+  technology: "A friendly illustration about technology help and digital inclusion. No text.",
+  basic_needs: "A kind illustration about food, clothing, and basic needs support. No text.",
+  social: "A supportive illustration about community volunteering and social help. No text.",
+  other: "A general illustration about charity and helping hands. No text.",
+};
+
+app.post("/api/images/generate", requireAuth, aiLimiter, async (req, res) => {
+  try {
+    const topic = String(req.body?.topic || "other").trim();
+    if (!ALLOWED.topic.includes(topic)) {
+      return res.status(400).json({ message: "Invalid topic." });
+    }
+
+    const prompt = PROMPTS_BY_TOPIC[topic] || PROMPTS_BY_TOPIC.other;
+
+    // Generate (base64)
+    const r = await openai.images.generate({
+      model: "gpt-image-1",
+      prompt,
+      size: "1024x1024",
+    });
+
+    const b64 = r.data?.[0]?.b64_json;
+    if (!b64) return res.status(500).json({ message: "No image returned." });
+
+    const buf = Buffer.from(b64, "base64");
+
+    const dir = path.join(__dirname, "uploads", "ai");
+    fs.mkdirSync(dir, { recursive: true });
+
+    const fileName = `ai_${Date.now()}_${Math.random().toString(16).slice(2)}.png`;
+    const abs = path.join(dir, fileName);
+    fs.writeFileSync(abs, buf);
+
+    const image_url = `/uploads/ai/${fileName}`;
+    return res.json({
+      ok: true,
+      image_url,
+      image_source: "ai",
+      image_key: fileName.replace(".png", ""),
+    });
+  } catch (err) {
+    console.error("AI generate error:", err);
+    return res.status(500).json({ message: "AI generation failed." });
+  }
+});
+
 
 // Test route – to check if the backend is running
 app.get('/api/health', (req, res) => {
@@ -449,7 +517,7 @@ function requireAuth(req, res, next) {
 }
 
 const ALLOWED = {
-  help_type: ["money", "volunteer", "service", "product"],
+  help_type: ["money", "volunteer", "service"],
   category: ["nursing_home", "ngo", "school", "hospital", "orphanage", "private", "other"],
   target_group: ["elderly", "children", "youth", "families", "patients", "refugees", "general"],
   topic: ["health", "education", "arts", "technology", "basic_needs", "social", "other"],
@@ -469,6 +537,25 @@ app.post("/api/requests", requireAuth, async (req, res) => {
     const region = String(req.body?.region || "").trim();
     const title = String(req.body?.title || "").trim();
     const full_description = String(req.body?.full_description || "").trim();
+
+    // --- image fields (optional) ---
+    let image_source = String(req.body?.image_source || "").trim() || null;
+    const image_key = String(req.body?.image_key || "").trim() || null;
+    const image_url = String(req.body?.image_url || "").trim() || null;
+
+    if (image_source === "ai_preset") image_source = "ai";
+
+    const IMAGE_SOURCES = ["internal", "cloudinary", "ai"];
+    if (image_source && !IMAGE_SOURCES.includes(image_source)) {
+      return res.status(400).json({ message: "Invalid image_source." });
+    }
+
+    if (image_url && image_url.length > 500) {
+      return res.status(400).json({ message: "Invalid image_url." });
+    }
+    if (image_key && image_key.length > 100) {
+      return res.status(400).json({ message: "Invalid image_key." });
+    }
 
     let amount_needed = req.body?.amount_needed;
     const is_money_request = help_type === "money" ? 1 : 0;
@@ -494,9 +581,9 @@ app.post("/api/requests", requireAuth, async (req, res) => {
 
     const [result] = await db.query(
       `INSERT INTO requests
-        (user_id, help_type, category, target_group, topic, region, title, short_summary, full_description, amount_needed, is_money_request, status, created_at)
+        (user_id, help_type, category, target_group, topic, region, title, short_summary, full_description, amount_needed, is_money_request, image_url, image_source, image_key, status, created_at)
        VALUES
-        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', NOW())`,
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', NOW())`,
       [
         userId,
         help_type,
@@ -509,6 +596,9 @@ app.post("/api/requests", requireAuth, async (req, res) => {
         full_description,
         amount_needed,
         is_money_request,
+        image_url,
+        image_source,
+        image_key,
       ]
     );
 
@@ -525,8 +615,10 @@ app.get("/api/requests", requireAuth, async (req, res) => {
     const { region, topic, category, help_type, status, mine } = req.query;
 
     let sql = `
-      SELECT id, user_id, help_type, category, target_group, topic, region,
-             title, short_summary, full_description, amount_needed, status, created_at
+    SELECT id, user_id, help_type, category, target_group, topic, region,
+       title, short_summary, full_description, amount_needed, status,
+       image_url, image_source, image_key,
+       created_at
       FROM requests
       WHERE 1=1
     `;

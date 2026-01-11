@@ -212,6 +212,20 @@
               <label for="qAmountNeeded">Amount needed (NIS)</label>
               <input id="qAmountNeeded" type="number" inputmode="numeric" min="1" step="1" placeholder="e.g., 500" />
             </div>
+
+            <div class="q-row span-3">
+              <label>Image (optional)</label>
+            
+              <div class="q-image-actions">
+                <button type="button" id="qChooseDefaultImg" class="btn btn--ghost">Choose default</button>
+                <button type="button" id="qChooseAiImg" class="btn btn--ghost">AI (limited)</button>
+                <button type="button" id="qClearImg" class="btn btn--ghost">Clear</button>
+              </div>
+            
+              <img id="qImgPreview" alt="" style="display:none; max-width:240px; border-radius:12px; margin-top:10px;">
+            </div>
+            
+            <input id="qImgUpload" type="file" accept="image/*" hidden />            
           </div>          
 
 
@@ -230,6 +244,17 @@
         </div>
       </dialog>
     </div>
+
+    <dialog id="imgDialog" class="cm-dialog" aria-label="Choose an image">
+      <p style="margin:0; font-weight:900;">Choose an image</p>
+    
+      <div id="imgDialogGrid" class="img-grid" style="margin-top:12px;"></div>
+    
+      <div class="dialog-actions" style="margin-top:12px;">
+        <button id="imgDialogCancel" class="btn" type="button">Cancel</button>
+        <button id="imgDialogSkip" class="btn" type="button">Skip</button>
+      </div>
+    </dialog>    
   </main>
 
   <script src="../js/chat.js"></script>
