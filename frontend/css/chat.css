@@ -24,7 +24,7 @@
 .chat-body::before{ top: -140px; left: -160px; background: rgba(255,255,255,0.85); }
 .chat-body::after { bottom: -160px; right: -180px; background: rgba(58,50,64,0.18); }
 
-/* ===== Header (text links like Wix) ===== */
+/* ===== Header  ===== */
 .chat-header{
   background: transparent;
   border-bottom: 0;
@@ -60,6 +60,37 @@
   align-items: center;
   gap: 16px;
 }
+
+.chat-left{
+  display:flex;
+  align-items:center;
+  gap: 12px;
+}
+
+.icon-btn{
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  opacity: .78;
+}
+
+.icon-btn:hover:not(:disabled){
+  opacity: 1;
+  background: rgba(58,50,64,.08);
+}
+.icon-btn i{ font-size: 18px; }
+
+.icon-btn:disabled{
+  opacity: 0.35;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
 
 /* link-like buttons */
 .mode-btn,
@@ -230,21 +261,6 @@ select:focus-visible{
   background: rgba(58,50,64,.12);
 }
 
-/* ===== “Jump to latest” ===== */
-.jump-latest{
-  position: fixed;
-  right: 26px;
-  bottom: 210px;
-  border: 1px solid rgba(58,50,64,.16);
-  background: rgba(255,255,255,.75);
-  backdrop-filter: blur(10px);
-  border-radius: 999px;
-  padding: 10px 14px;
-  font-weight: 900;
-  cursor: pointer;
-}
-.jump-latest:hover{ background: rgba(255,255,255,.92); }
-
 /* ===== Bottom controls (fixed, like Wix) ===== */
 .choice-tools,
 .chat-choices,
@@ -362,6 +378,29 @@ select:focus-visible{
 }
 .q-actions{ display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 
+.q-row input,
+.q-row textarea{
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 12px;
+  background: rgba(255,255,255,0.75);
+  min-height: 48px;
+}
+
+.q-row textarea{
+  min-height: 120px;
+  resize: vertical;
+}
+
+.span-3{ grid-column: 1 / -1; }
+
+.q-error{
+  margin: 0;
+  font-weight: 800;
+  color: #b00020;
+}
+
+
 /* Dialog */
 .cm-dialog{
   border: 1px solid var(--border);
@@ -437,3 +476,25 @@ select:focus-visible{
   @media (max-width: 640px){
     .img-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }  
+
+/*  SCROLL */
+.scroll-down{
+  position: fixed;
+  bottom: 170px;
+  right: calc((100vw - min(760px, calc(100vw - 32px))) / 2 + 350px);
+
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(58,50,64,.18);
+  background: rgba(255,255,255,.92);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  box-shadow: 0 10px 25px rgba(0,0,0,.12);
+  z-index: 25; 
+}
+.scroll-down:hover{ background: #fff; }
+.scroll-down[hidden]{ display:none; }
+  

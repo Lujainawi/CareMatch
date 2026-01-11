@@ -34,6 +34,12 @@ async function requireLogin() {
   const modeChat = document.getElementById("modeChat");
   const modeQuick = document.getElementById("modeQuick");
 
+  const scrollDownBtn = document.getElementById("scrollDownBtn");
+
+  const endDialog = document.getElementById("endDialog");
+  const endCancelBtn = document.getElementById("endCancelBtn");
+  const endConfirmBtn = document.getElementById("endConfirmBtn");
+
 
   const ORG_DEFAULT_IMAGES = [
     { key: "org_01", src: "../images/aharai.jpeg", alt: "Default image 1" },
@@ -53,36 +59,43 @@ async function requireLogin() {
   ];
   
   // AI
-  const AI_PRESETS_BY_TOPIC = {
-    health: [
-      { key: "health_1", label: "Health illustration" },
-      { key: "health_2", label: "Medical support icon" },
-    ],
-    education: [
-      { key: "edu_1", label: "Education illustration" },
-      { key: "edu_2", label: "Learning support icon" },
-    ],
-    arts: [
-      { key: "arts_1", label: "Arts activity illustration" },
-      { key: "arts_2", label: "Creative workshop icon" },
-    ],
-    technology: [
-      { key: "tech_1", label: "Technology training illustration" },
-      { key: "tech_2", label: "Digital help icon" },
-    ],
-    basic_needs: [
-      { key: "needs_1", label: "Food & essentials illustration" },
-      { key: "needs_2", label: "Community support icon" },
-    ],
-    social: [
-      { key: "social_1", label: "Community event illustration" },
-      { key: "social_2", label: "Social support icon" },
-    ],
-    other: [
-      { key: "other_1", label: "General helpful illustration" },
-      { key: "other_2", label: "Neutral support icon" },
-    ],
-  };  
+// במקום AI_PRESETS_BY_TOPIC:
+const AI_IMAGES_BY_TOPIC = {
+  health: [
+    { key: "ai_health_1", label: "Health 1", src: "../images/ai/health_1.png", alt: "Health preset 1" },
+    { key: "ai_health_2", label: "Health 2", src: "../images/ai/health_2.png", alt: "Health preset 2" },
+    { key: "ai_health_3", label: "Health 3", src: "../images/ai/health_3.png", alt: "Health preset 3" },
+  ],
+  education: [
+    { key: "ai_edu_1", label: "Education 1", src: "../images/ai/edu_1.png", alt: "Education preset 1" },
+    { key: "ai_edu_2", label: "Education 2", src: "../images/ai/edu_2.png", alt: "Education preset 2" },
+  ],
+  arts: [
+    { key: "ai_arts_1", label: "Arts 1", src: "../images/ai/arts_1.png", alt: "Arts preset 1" },
+    { key: "ai_arts_2", label: "Arts 2", src: "../images/ai/arts_2.png", alt: "Arts preset 2" },
+  ],
+  technology: [
+    { key: "ai_tech_1", label: "Tech 1", src: "../images/ai/tech_1.png", alt: "Tech preset 1" },
+    { key: "ai_tech_2", label: "Tech 2", src: "../images/ai/tech_2.png", alt: "Tech preset 2" },
+  ],
+  basic_needs: [
+    { key: "ai_needs_1", label: "Basic needs 1", src: "../images/ai/needs_1.png", alt: "Needs preset 1" },
+    { key: "ai_needs_2", label: "Basic needs 2", src: "../images/ai/needs_2.png", alt: "Needs preset 2" },
+  ],
+  social: [
+    { key: "ai_social_1", label: "Social 1", src: "../images/ai/social_1.png", alt: "Social preset 1" },
+    { key: "ai_social_2", label: "Social 2", src: "../images/ai/social_2.png", alt: "Social preset 2" },
+  ],
+  other: [
+    { key: "ai_other_1", label: "General 1", src: "../images/ai/other_1.png", alt: "Other preset 1" },
+    { key: "ai_other_2", label: "General 2", src: "../images/ai/other_2.png", alt: "Other preset 2" },
+  ],
+}; 
+  
+  function updateBackButton() {
+    if (!backBtn) return;
+    backBtn.disabled = history.length <= 1;
+  }  
 
   function setImageGrid(images, onPick) {
     choicesEl.innerHTML = "";
@@ -98,8 +111,8 @@ async function requireLogin() {
       btn.className = "img-choice";
   
       btn.innerHTML = `
-        <img src="${imgObj.src}" alt="${imgObj.alt}">
-        <span>${imgObj.key.replace("org_", "Image ")}</span>
+          <img src="${imgObj.src}" alt="${imgObj.alt}">
+          <span>${imgObj.label || imgObj.key}</span>
       `;
   
       btn.addEventListener("click", () => {
@@ -139,6 +152,57 @@ const qRegion = document.getElementById("qRegion");
 const qCategory = document.getElementById("qCategory");
 const qTopic = document.getElementById("qTopic");
 
+const qDonorFields = document.getElementById("qDonorFields");
+const qRequesterFields = document.getElementById("qRequesterFields");
+const qHelpType = document.getElementById("qHelpType");
+const qReqCategory = document.getElementById("qReqCategory");
+const qTargetGroup = document.getElementById("qTargetGroup");
+const qReqRegion = document.getElementById("qReqRegion");
+const qReqTopic = document.getElementById("qReqTopic");
+const qTitle = document.getElementById("qTitle");
+const qDescription = document.getElementById("qDescription");
+const qAmountRow = document.getElementById("qAmountRow");
+const qAmountNeeded = document.getElementById("qAmountNeeded");
+const qError = document.getElementById("qError");
+const qSubmitBtn = document.getElementById("qSubmitBtn");
+
+function setQuickError(msg) {
+  if (!qError) return;
+  qError.textContent = msg || "";
+}
+
+function syncQuickFormUI() {
+  const intent = qIntent.value;
+
+  // toggle sections
+  if (qDonorFields) qDonorFields.hidden = intent !== "donor";
+  if (qRequesterFields) qRequesterFields.hidden = intent !== "requester";
+
+  // donor submit text
+  if (qSubmitBtn) {
+    if (intent === "donor") {
+      qSubmitBtn.textContent = (qDonationType.value === "money") ? "Go to Donate" : "Show results";
+    } else {
+      qSubmitBtn.textContent = "Submit request";
+    }
+  }
+
+  // requester: amount only for money
+  if (intent === "requester") {
+    const showAmount = qHelpType.value === "money";
+    if (qAmountRow) qAmountRow.hidden = !showAmount;
+    if (!showAmount && qAmountNeeded) qAmountNeeded.value = "";
+  }
+
+  setQuickError("");
+}
+
+qIntent?.addEventListener("change", syncQuickFormUI);
+qDonationType?.addEventListener("change", syncQuickFormUI);
+qHelpType?.addEventListener("change", syncQuickFormUI);
+syncQuickFormUI();
+
+
 function setMode(mode) {
   const isQuick = mode === "quick";
 
@@ -153,6 +217,23 @@ function setMode(mode) {
   modeChat.setAttribute("aria-pressed", String(!isQuick));
 }
 
+function isNearBottom(el, threshold = 40) {
+  return el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+}
+
+function updateScrollDownButton() {
+  if (!scrollDownBtn) return;
+  scrollDownBtn.hidden = isNearBottom(chatLog);
+}
+
+chatLog.addEventListener("scroll", updateScrollDownButton);
+
+scrollDownBtn.addEventListener("click", () => {
+  chatLog.scrollTo({ top: chatLog.scrollHeight, behavior: "smooth" });
+  updateScrollDownButton();
+});
+
+
 
   function setComposerEnabled(enabled, placeholder = "") {
     textForm.hidden = false;
@@ -166,15 +247,22 @@ function setMode(mode) {
     if (enabled) textInput.focus();
   }
   
+  let suppressMsgs = false;
   function addMsg(text, who = "bot") {
+    if (suppressMsgs) return;
+  
     const div = document.createElement("div");
     div.className = `msg ${who}`;
     div.textContent = text;
     chatLog.appendChild(div);
   
-    // keep scrolling inside chat log
-    chatLog.scrollTop = chatLog.scrollHeight;
-  }
+    const shouldStick = isNearBottom(chatLog);
+    if (shouldStick) {
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+  
+    updateScrollDownButton();
+  }  
   
   function setChoices(buttons = []) {
     choicesEl.innerHTML = "";
@@ -195,12 +283,19 @@ function setMode(mode) {
   
       choicesEl.appendChild(btn);
     });
+
+    updateScrollDownButton();
   }
   
   /** ---- Text question helper ---- */
   let pendingTextHandler = null;
   
   function askText(prompt, placeholder, handler) {
+    if (typeof placeholder === "function") {
+      handler = placeholder;
+      placeholder = "";
+    }
+
     addMsg(prompt, "bot");
   
     // clear choices and enable typing
@@ -210,6 +305,8 @@ function setMode(mode) {
     textForm.hidden = false;
     textInput.value = "";
     setComposerEnabled(true, placeholder || "Type your answer…");
+
+    pushHistory(state);
   }  
   
   textForm.addEventListener("submit", (e) => {
@@ -239,7 +336,8 @@ function setMode(mode) {
   /** ---- Simple state + history ---- */
   let history = [];
   let state = {
-    mode: "donor", // donor / requester
+    mode: null, // null / donor / requester
+  
     // donor fields
     donationType: null, // money / volunteer
     region: null,
@@ -248,54 +346,189 @@ function setMode(mode) {
   
     // requester fields
     helpType: null, // money / volunteer / service
+    requestFor: null, // "org" / "individual"  (NEW)
     targetGroup: null,
     title: null,
     fullDescription: null,
     amountNeeded: null,
   
-    // image (optional future)
-    imageSource: null, // internal / cloudinary / ai
+    // image
+    imageSource: null, // internal / upload_pending / ai
     imageKey: null,
     imageUrl: null
   };
   
+  
   function pushHistory(snapshot) {
-    history.push(JSON.parse(JSON.stringify(snapshot)));
+    const snap = JSON.parse(JSON.stringify(snapshot));
+    snap.__chatHtml = chatLog.innerHTML;  
+    history.push(snap);
+    updateBackButton();
   }
+  
   function popHistory() {
     if (history.length <= 1) return null;
     history.pop();
+    updateBackButton();
     return JSON.parse(JSON.stringify(history[history.length - 1]));
   }
+  
   
   function resetAll() {
     history = [];
     state = {
-      mode: "donor",
+      mode: null,
+    
       donationType: null,
       region: null,
       category: null,
       topic: null,
-  
+    
       helpType: null,
+      requestFor: null,
       targetGroup: null,
       title: null,
       fullDescription: null,
       amountNeeded: null,
-  
+    
       imageSource: null,
       imageKey: null,
       imageUrl: null
-    };
+    };    
     choicesEl.innerHTML = "";
     textForm.hidden = true;
     chatLog.innerHTML = "";
+    updateBackButton();
   }
+
+  function showDonorCategoryQuestion(type) {
+    progressText.textContent = "Step 4";
+    hintText.textContent = "";
+  
+    addMsg("Which type of organization do you prefer?");
+    setChoices([
+      { label: "NGO", onClick: () => pickCategory("ngo", type) },
+      { label: "Hospital", onClick: () => pickCategory("hospital", type) },
+      { label: "School", onClick: () => pickCategory("school", type) },
+      { label: "Nursing home", onClick: () => pickCategory("nursing_home", type) },
+      { label: "Orphanage", onClick: () => pickCategory("orphanage", type) },
+      { label: "Any", onClick: () => pickCategory("any", type) },
+    ]);
+
+    pushHistory(state);
+  }
+  
+  function showDonorTopicQuestion(type) {
+    progressText.textContent = "Step 5";
+    hintText.textContent = "";
+  
+    addMsg("Which topic matters most to you?");
+    setChoices([
+      { label: "Health", onClick: () => pickTopic("health", type) },
+      { label: "Education", onClick: () => pickTopic("education", type) },
+      { label: "Arts", onClick: () => pickTopic("arts", type) },
+      { label: "Technology", onClick: () => pickTopic("technology", type) },
+      { label: "Basic needs", onClick: () => pickTopic("basic_needs", type) },
+      { label: "Social", onClick: () => pickTopic("social", type) },
+      { label: "Other", onClick: () => pickTopic("other", type) },
+    ]);
+
+    pushHistory(state);
+  }
+  
+  function renderFromState() {
+    pendingTextHandler = null;
+    choicesEl.classList.remove("is-image-grid");
+    choicesEl.innerHTML = "";
+    setComposerEnabled(false, "Choose an option below…");
+  
+    if (!state.mode) {
+      progressText.textContent = "Step 1";
+      hintText.textContent = "";
+      addMsg("What would you like to do today?");
+      setChoices([
+        {
+          label: "Donate",
+          onClick: () => {
+            addMsg("Donate", "user");
+            state.mode = "donor";
+            donorContribute();
+          },
+        },
+        {
+          label: "Request support",
+          onClick: () => {
+            addMsg("Request support", "user");
+            state.mode = "requester";
+            requesterIntro();
+          },
+        },
+      ]);
+      return;
+    }
+  
+    // 2) Donor flow
+    if (state.mode === "donor") {
+      if (!state.donationType) {
+        donorContribute();
+        return;
+      }
+  
+      // money: יראה שוב את מסך "Go to Donate"
+      if (state.donationType === "money") {
+        progressText.textContent = "Step 2";
+        hintText.textContent = "";
+        addMsg("You can donate securely on our Donate page.");
+        setChoices([{ label: "Go to Donate Money page", onClick: () => (window.location.href = "donate.html") }]);
+        return;
+      }
+  
+      // volunteer:
+      if (!state.region) {
+        donorFiltersThenResults("volunteer"); // שאלה על Region
+        return;
+      }
+      if (!state.category) {
+        showDonorCategoryQuestion("volunteer"); // שאלה על Category
+        return;
+      }
+      if (!state.topic) {
+        showDonorTopicQuestion("volunteer"); // שאלה על Topic
+        return;
+      }
+  
+      goToResults({
+        mode: "donor",
+        donation_type: "volunteer",
+        region: state.region || "",
+        topic: state.topic || "",
+        category: state.category && state.category !== "any" ? state.category : "",
+      });
+      return;
+    }
+  
+    // 3) Requester flow
+    if (state.mode === "requester") {
+      if (!state.helpType) { requesterPickHelpType(); return; }
+      if (!state.requestFor) { requesterWhoFor(); return; }
+  
+      if (state.requestFor === "org" && !state.category) { requesterOrgType(); return; }
+  
+      if (!state.targetGroup) { requesterTargetGroup(); return; }
+      if (!state.topic) { requesterTopic(); return; }
+      if (!state.region) { requesterRegion(); return; }
+      if (!state.title) { requesterTitle(); return; }
+      if (!state.fullDescription) { requesterDescription(); return; }
+  
+      if (state.helpType === "money" && !state.amountNeeded) { requesterAmountNeeded(); return; }
+  
+      requesterImageOptional();
+    }
+  }  
   
   /** ---- Flow ---- */
   function startFlow(userName = "there") {
     resetAll();
-    pushHistory(state);
   
     progressText.textContent = "Step 1";
     hintText.textContent = "";
@@ -303,28 +536,27 @@ function setMode(mode) {
     addMsg(`Hi, ${userName}! 👋`);
     addMsg("Welcome to CareMatch. I’ll ask a few questions to filter the best matches for you.");
     addMsg("NOTE: please don’t share sensitive personal details here.");
-  
-    addMsg("First, what brings you here?");
+    addMsg("What would you like to do today?");
+
     setChoices([
       {
-        label: "I want to donate",
+        label: "Donate",
         onClick: () => {
-          addMsg("I want to donate", "user");
+          addMsg("Donate", "user");
           state.mode = "donor";
-          pushHistory(state);
           donorContribute();
         },
       },
       {
-        label: "I need help",
+        label: "Request support",
         onClick: () => {
-          addMsg("I need help", "user");
+          addMsg("Request support", "user");
           state.mode = "requester";
-          pushHistory(state);
           requesterIntro();
         },
       },
     ]);
+    pushHistory(state);
   }
   
   /** ---------------- DONOR ---------------- */
@@ -332,14 +564,13 @@ function setMode(mode) {
     progressText.textContent = "Step 2";
     hintText.textContent = "";
   
-    addMsg("Great. How would you like to contribute?");
+    addMsg("How would you like to help?");
     setChoices([
       {
         label: "Donate Money",
         onClick: () => {
           addMsg("Donate Money", "user");
           state.donationType = "money";
-          pushHistory(state);
   
           addMsg("You can donate securely on our Donate page.");
           setChoices([
@@ -351,15 +582,16 @@ function setMode(mode) {
         },
       },
       {
-        label: "Volunteer (in person)",
+        label: "Volunteer in person",
         onClick: () => {
-          addMsg("Volunteer (in person)", "user");
+          addMsg("Volunteer in person", "user");
           state.donationType = "volunteer";
-          pushHistory(state);
           donorFiltersThenResults("volunteer");
         },
       },
     ]);
+
+    pushHistory(state);
   }
   
   function donorFiltersThenResults(type) {
@@ -374,12 +606,13 @@ function setMode(mode) {
       { label: "Jerusalem", onClick: () => pickRegion("jerusalem", type) },
       { label: "East", onClick: () => pickRegion("east", type) },
     ]);
+
+    pushHistory(state);
   }
   
   function pickRegion(region, type) {
     addMsg(region, "user");
     state.region = region;
-    pushHistory(state);
   
     progressText.textContent = "Step 4";
     hintText.textContent = "";
@@ -393,32 +626,20 @@ function setMode(mode) {
       { label: "Orphanage", onClick: () => pickCategory("orphanage", type) },
       { label: "Any", onClick: () => pickCategory("any", type) },
     ]);
+
+    pushHistory(state);
   }
   
   function pickCategory(category, type) {
     addMsg(category, "user");
     state.category = category;
-    pushHistory(state);
-  
-    progressText.textContent = "Step 5";
-    hintText.textContent = "";
-  
-    addMsg("Which topic matters most to you?");
-    setChoices([
-      { label: "Health", onClick: () => pickTopic("health", type) },
-      { label: "Education", onClick: () => pickTopic("education", type) },
-      { label: "Arts", onClick: () => pickTopic("arts", type) },
-      { label: "Technology", onClick: () => pickTopic("technology", type) },
-      { label: "Basic needs", onClick: () => pickTopic("basic_needs", type) },
-      { label: "Social", onClick: () => pickTopic("social", type) },
-      { label: "Other", onClick: () => pickTopic("other", type) },
-    ]);
+    showDonorTopicQuestion(type); 
   }
+  
   
   function pickTopic(topic, type) {
     addMsg(topic, "user");
     state.topic = topic;
-    pushHistory(state);
   
     progressText.textContent = "Done";
     hintText.textContent = "";
@@ -436,12 +657,13 @@ function setMode(mode) {
     goToResults(params);
   }
   
+  
   /** ---------------- REQUESTER (I need help) ---------------- */
   function requesterIntro() {
     progressText.textContent = "Step 2";
     hintText.textContent = "";
   
-    addMsg("Got it. I’ll ask a few quick questions and then create your request and show matching results.");
+    addMsg("Thanks — I’ll ask a few quick questions, publish your request, and then show matching results.");
     requesterPickHelpType();
   }
   
@@ -453,7 +675,6 @@ function setMode(mode) {
         onClick: () => {
           addMsg("Financial support", "user");
           state.helpType = "money";
-          pushHistory(state);
           requesterWhoFor();
         },
       },
@@ -462,16 +683,14 @@ function setMode(mode) {
         onClick: () => {
           addMsg("Volunteer", "user");
           state.helpType = "volunteer";
-          pushHistory(state);
           requesterWhoFor();
         },
       },
       {
-        label: "Service / Workshop",
+        label: "Service or workshop",
         onClick: () => {
-          addMsg("Service / Workshop", "user");
+          addMsg("Service or workshop", "user");
           state.helpType = "service";
-          pushHistory(state);
           requesterWhoFor();
         },
       },
@@ -484,6 +703,7 @@ function setMode(mode) {
         },
       },
     ]);
+    pushHistory(state);
   }
   
   function requesterWhoFor() {
@@ -495,7 +715,7 @@ function setMode(mode) {
         label: "An organization",
         onClick: () => {
           addMsg("An organization", "user");
-          pushHistory(state);
+          state.requestFor = "org";      // NEW
           requesterOrgType();
         },
       },
@@ -503,12 +723,14 @@ function setMode(mode) {
         label: "An individual",
         onClick: () => {
           addMsg("An individual", "user");
-          state.category = "private"; // schema enum has 'private'
-          pushHistory(state);
+          state.requestFor = "individual"; // NEW
+          state.category = "private";
           requesterTargetGroup();
         },
-      },
+      },      
     ]);
+
+    pushHistory(state);
   }
   
   function requesterOrgType() {
@@ -523,12 +745,13 @@ function setMode(mode) {
       { label: "Orphanage", onClick: () => setRequesterCategory("orphanage") },
       { label: "Other", onClick: () => setRequesterCategory("other") },
     ]);
+
+    pushHistory(state);
   }
   
   function setRequesterCategory(cat) {
     addMsg(cat, "user");
     state.category = cat;
-    pushHistory(state);
     requesterTargetGroup();
   }
   
@@ -545,12 +768,13 @@ function setMode(mode) {
       { label: "Refugees", onClick: () => setTargetGroup("refugees") },
       { label: "General", onClick: () => setTargetGroup("general") },
     ]);
+
+    pushHistory(state);
   }
   
   function setTargetGroup(g) {
     addMsg(g, "user");
     state.targetGroup = g;
-    pushHistory(state);
     requesterTopic();
   }
   
@@ -567,12 +791,13 @@ function setMode(mode) {
       { label: "Social", onClick: () => setTopic("social") },
       { label: "Other", onClick: () => setTopic("other") },
     ]);
+
+    pushHistory(state);
   }
   
   function setTopic(t) {
     addMsg(t, "user");
     state.topic = t;
-    pushHistory(state);
     requesterRegion();
   }
   
@@ -587,12 +812,13 @@ function setMode(mode) {
       { label: "Jerusalem", onClick: () => setRegion("jerusalem") },
       { label: "East", onClick: () => setRegion("east") },
     ]);
+
+    pushHistory(state);
   }
   
   function setRegion(r) {
     addMsg(r, "user");
     state.region = r;
-    pushHistory(state);
     requesterTitle();
   }
   
@@ -604,7 +830,6 @@ function setMode(mode) {
       "Short title…",
       (val) => {
         state.title = val.slice(0, 255);
-        pushHistory(state);
         requesterDescription();
       }
     );
@@ -618,7 +843,6 @@ function setMode(mode) {
       "Describe your request…",
       (val) => {
         state.fullDescription = val;
-        pushHistory(state);
   
         if (state.helpType === "money") {
           requesterAmountNeeded();
@@ -632,18 +856,22 @@ function setMode(mode) {
   function requesterAmountNeeded() {
     progressText.textContent = "Step 10";
   
-    askText("What amount is needed? (numbers only)", "e.g., 500", (val) => {
-      const num = Number(String(val).replace(/[^\d.]/g, ""));
-      if (!Number.isFinite(num) || num <= 0) {
-        addMsg("Please enter a positive number (e.g., 500).");
-        requesterAmountNeeded();
-        return;
+    askText(
+      "What amount is needed? (numbers only, in NIS)",
+      "e.g., 500",
+      (val) => {
+        const num = Number(String(val).replace(/[^\d.]/g, ""));
+        if (!Number.isFinite(num) || num <= 0) {
+          addMsg("Please enter a positive number (e.g., 500).");
+          requesterAmountNeeded();
+          return;
+        }
+        state.amountNeeded = num;
+        requesterImageOptional();
       }
-      state.amountNeeded = num;
-      pushHistory(state);
-      requesterImageOptional();
-    });
+    );
   }
+  
   
   /** Optional image step (scaffold)
    *  Cloudinary / AI will be connected later.
@@ -652,7 +880,7 @@ function setMode(mode) {
   function requesterImageOptional() {
     progressText.textContent = "Step 11";
   
-    const isOrg = state.category && state.category !== "private";
+    const isOrg = state.requestFor === "org";
   
     if (isOrg) {
       addMsg("Last step: choose one of our default images (14 options).", "bot");
@@ -662,12 +890,12 @@ function setMode(mode) {
         state.imageSource = "internal";
         state.imageKey = imgObj.key;
         state.imageUrl = imgObj.src; // for preview/use in results if you want
-        pushHistory(state);
   
         choicesEl.classList.remove("is-image-grid");
         submitRequest();
       });
   
+      pushHistory(state);
       return;
     }
   
@@ -688,25 +916,24 @@ function setMode(mode) {
         label: "Generate with AI (limited)",
         onClick: () => {
           addMsg("Generate with AI (limited)", "user");
-  
+        
           const topic = state.topic || "other";
-          const presets = AI_PRESETS_BY_TOPIC[topic] || AI_PRESETS_BY_TOPIC.other;
-  
-          addMsg("Choose an AI preset (limited to your topic).", "bot");
-          setChoices(
-            presets.map((p) => ({
-              label: p.label,
-              onClick: () => {
-                addMsg(p.label, "user");
-                state.imageSource = "ai";
-                state.imageKey = `ai:${topic}:${p.key}`;
-                state.imageUrl = null;
-                pushHistory(state);
-                submitRequest();
-              },
-            }))
-          );
-        },
+          const images = AI_IMAGES_BY_TOPIC[topic] || AI_IMAGES_BY_TOPIC.other;
+        
+          addMsg("Choose an AI image (limited to your topic).", "bot");
+        
+          setImageGrid(images, (imgObj) => {
+            addMsg(`Selected ${imgObj.label}`, "user");
+            state.imageSource = "ai_preset";
+            state.imageKey = imgObj.key;
+            state.imageUrl = imgObj.src; 
+        
+            choicesEl.classList.remove("is-image-grid");
+            submitRequest();
+          });
+
+          pushHistory(state);
+        },        
       },
       {
         label: "Skip",
@@ -716,6 +943,8 @@ function setMode(mode) {
         },
       },
     ]);
+
+    pushHistory(state);
   }  
   
   if (imageInput) {
@@ -758,7 +987,7 @@ function setMode(mode) {
       amount_needed: state.helpType === "money" ? state.amountNeeded : null,
   
       // optional future image fields
-      image_url: state.imageSource === "internal" ? state.imageUrl : null,
+      image_url: (state.imageSource === "internal" || state.imageSource === "ai_preset") ? state.imageUrl : null,
       image_source: state.imageSource,
       image_key: state.imageKey || null,
     };
@@ -790,10 +1019,24 @@ function setMode(mode) {
     const prev = popHistory();
     if (!prev) return;
   
-    state = prev;
-    addMsg("Back", "user");
-    addMsg("Back restored the previous answers. (Next step: re-render the exact step UI.)");
+    // restore state
+    const { __chatHtml, ...rest } = prev;
+    state = rest;
+  
+    // restore UI without adding new messages
+    if (typeof __chatHtml === "string") chatLog.innerHTML = __chatHtml;
+  
+    suppressMsgs = true;
+    try {
+      renderFromState();
+    } finally {
+      suppressMsgs = false;
+    }
+
+    updateScrollDownButton();
+    
   });
+   
   
   restartBtn.addEventListener("click", () => {
     addMsg("Restart chat", "user");
@@ -801,43 +1044,120 @@ function setMode(mode) {
   });
   
   endBtn.addEventListener("click", () => {
+    if (endDialog && typeof endDialog.showModal === "function") {
+      endDialog.showModal();
+    } else {
+      goToResults({ mode: state.mode || "donor" });
+    }
+  });
+  
+  endCancelBtn?.addEventListener("click", () => endDialog?.close());
+  endConfirmBtn?.addEventListener("click", () => {
+    endDialog?.close();
     goToResults({ mode: state.mode || "donor" });
   });
+  
   
   /** Quick form toggle (UI only right now) */
   modeChat.addEventListener("click", () => setMode("chat"));
   modeQuick.addEventListener("click", () => setMode("quick"));  
 
   if (quickForm) {
-    quickForm.addEventListener("submit", (e) => {
+    quickForm.addEventListener("submit", async (e) => {
       e.preventDefault();
+      setQuickError("");
   
       const intent = qIntent.value;
   
-      // כרגע Quick Form לתורמים (דונור) בלבד
+      // ---- DONOR ----
       if (intent === "donor") {
+        if (qDonationType.value === "money") {
+          window.location.href = "donate.html";
+          return;
+        }
+  
         const params = {
           mode: "donor",
-          donation_type: qDonationType.value,
+          donation_type: "volunteer",
           region: qRegion.value || "",
           category: qCategory.value || "",
           topic: qTopic.value || "",
         };
   
-        // ניקוי פרמטרים ריקים
         Object.keys(params).forEach((k) => {
           if (!params[k]) delete params[k];
         });
   
-        goToResults(params); // משתמש ב-URLSearchParams
+        goToResults(params);
         return;
       }
   
-      // requester: לעבור לשיחה (כי יש שם title/description/תמונות מותנות)
-      setMode("chat");
-      addMsg("For 'I need help', please use the Conversation flow.", "bot");
+      // ---- REQUESTER ----
+      // must be logged in (session cookie)
+      const me = await requireLogin();
+      if (!me) return;
+  
+      const payload = {
+        help_type: (qHelpType.value || "").trim(),
+        category: (qReqCategory.value || "").trim(),
+        target_group: (qTargetGroup.value || "").trim(),
+        region: (qReqRegion.value || "").trim(),
+        topic: (qReqTopic.value || "").trim(),
+        title: (qTitle.value || "").trim(),
+        full_description: (qDescription.value || "").trim(),
+      };
+  
+      if (
+        !payload.help_type ||
+        !payload.category ||
+        !payload.target_group ||
+        !payload.region ||
+        !payload.topic ||
+        !payload.title ||
+        !payload.full_description
+      ) {
+        setQuickError("Please fill all required fields.");
+        return;
+      }
+  
+      if (payload.help_type === "money") {
+        const n = Number(qAmountNeeded.value);
+        if (!Number.isFinite(n) || n <= 0) {
+          setQuickError("Please enter a valid amount (numbers only).");
+          return;
+        }
+        payload.amount_needed = n;
+      }
+  
+      try {
+        const res = await fetch("/api/requests", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(payload),
+        });
+  
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setQuickError(data.message || "Could not submit your request.");
+          return;
+        }
+  
+        // show "My requests" + matching open requests
+        goToResults({
+          mode: "requester",
+          mine: "1",
+          region: payload.region,
+          topic: payload.topic,
+          category: payload.category,
+          help_type: payload.help_type,
+        });
+      } catch (err) {
+        setQuickError("Network error. Please try again.");
+      }
     });
-  }  
+  }
+  
   
   /** ---- init ---- */
   (async function init() {
@@ -848,4 +1168,5 @@ function setMode(mode) {
     setMode("chat");
     setComposerEnabled(false);
     startFlow("there");
+    updateScrollDownButton();
   })();  

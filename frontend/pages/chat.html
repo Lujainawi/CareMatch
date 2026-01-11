@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Chat | CareMatch</title>
 
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
   <!-- your global styles -->
   <link rel="stylesheet" href="../css/index.css" />
   <link rel="stylesheet" href="../css/chat.css" />
@@ -14,7 +16,13 @@
   <!-- Header -->
   <header class="chat-header">
     <div class="container chat-header-inner">
-      <a class="chat-brand" href="../index.html">CareMatch</a>
+      <div class="chat-left">
+        <a class="chat-brand" href="../index.html">CareMatch</a>
+
+        <button id="backBtn" class="icon-btn" type="button" aria-label="Back" disabled>
+          <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+        </button>
+      </div>      
 
       <nav class="chat-top-actions" aria-label="Chat navigation">
         <div class="chat-mode" role="group" aria-label="Mode">
@@ -23,7 +31,6 @@
         </div>
 
         <div class="chat-controls" role="group" aria-label="Actions">
-          <button id="backBtn" class="chip-btn" type="button">Back</button>
           <button id="restartBtn" class="chip-btn" type="button">Restart chat</button>
           <button id="endBtn" class="chip-btn chip-btn--primary" type="button">End Chat &amp; Continue</button>
         </div>
@@ -44,9 +51,9 @@
         <div class="chat-card">
           <div id="chatLog" class="chat-log" aria-live="polite" aria-label="Conversation messages"></div>
 
-          <button id="jumpBtn" class="jump-latest" type="button" hidden aria-label="Jump to latest">
-            ↓ Jump to latest
-          </button>
+          <button id="scrollDownBtn" class="scroll-down" type="button" aria-label="Scroll to latest" hidden>
+            ↓
+          </button>          
 
           <div id="choiceTools" class="choice-tools" hidden></div>
 
@@ -73,12 +80,12 @@
           <div class="q-row">
             <label for="qIntent">What do you want to do?</label>
             <select id="qIntent">
-              <option value="donor">I want to donate</option>
-              <option value="requester">I need help (coming soon)</option>
-            </select>
+              <option value="donor">Donate</option>
+              <option value="requester">Request support</option>
+            </select>            
           </div>
 
-          <div class="q-grid">
+          <div id="qDonorFields" class="q-grid">
             <div class="q-row">
               <label for="qDonationType">Donation type</label>
               <select id="qDonationType">
@@ -126,9 +133,90 @@
             </div>
           </div>
 
-          <div class="q-actions">
-            <button class="btn" type="submit">Show results</button>
-          </div>
+          <div id="qRequesterFields" class="q-grid" hidden>
+            <div class="q-row">
+              <label for="qHelpType">Help type</label>
+              <select id="qHelpType">
+                <option value="">Select…</option>
+                <option value="money">Financial support</option>
+                <option value="volunteer">Volunteer</option>
+                <option value="service">Service / workshop</option>
+              </select>
+            </div>
+          
+            <div class="q-row">
+              <label for="qReqCategory">Who provides the help?</label>
+              <select id="qReqCategory">
+                <option value="">Select…</option>
+                <option value="private">Private person</option>
+                <option value="ngo">NGO</option>
+                <option value="school">School</option>
+                <option value="hospital">Hospital</option>
+                <option value="nursing_home">Nursing home</option>
+                <option value="orphanage">Orphanage</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          
+            <div class="q-row">
+              <label for="qTargetGroup">Which group is this for?</label>
+              <select id="qTargetGroup">
+                <option value="">Select…</option>
+                <option value="elderly">Elderly</option>
+                <option value="children">Children</option>
+                <option value="youth">Youth</option>
+                <option value="families">Families</option>
+                <option value="patients">Patients</option>
+                <option value="refugees">Refugees</option>
+                <option value="general">General</option>
+              </select>
+            </div>
+          
+            <div class="q-row">
+              <label for="qReqRegion">Region</label>
+              <select id="qReqRegion">
+                <option value="">Select…</option>
+                <option value="north">North</option>
+                <option value="center">Center</option>
+                <option value="south">South</option>
+                <option value="jerusalem">Jerusalem</option>
+                <option value="east">East</option>
+              </select>
+            </div>
+          
+            <div class="q-row">
+              <label for="qReqTopic">Topic</label>
+              <select id="qReqTopic">
+                <option value="">Select…</option>
+                <option value="health">Health</option>
+                <option value="education">Education</option>
+                <option value="arts">Arts</option>
+                <option value="technology">Technology</option>
+                <option value="basic_needs">Basic needs</option>
+                <option value="social">Social</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          
+            <div class="q-row span-3">
+              <label for="qTitle">Title</label>
+              <input id="qTitle" type="text" maxlength="80" placeholder="Short title…" />
+            </div>
+          
+            <div class="q-row span-3">
+              <label for="qDescription">Full description</label>
+              <textarea id="qDescription" rows="4" placeholder="Describe what you need…"></textarea>
+            </div>
+          
+            <div class="q-row" id="qAmountRow" hidden>
+              <label for="qAmountNeeded">Amount needed (NIS)</label>
+              <input id="qAmountNeeded" type="number" inputmode="numeric" min="1" step="1" placeholder="e.g., 500" />
+            </div>
+          </div>          
+
+
+          <p id="qError" class="q-error" aria-live="polite"></p>
+          <button id="qSubmitBtn" class="btn" type="submit">Show results</button>
         </form>
       </section>
 
