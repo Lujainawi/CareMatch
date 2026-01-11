@@ -16,6 +16,7 @@
     "express": "^5.2.1",
     "express-rate-limit": "^8.2.1",
     "express-session": "^1.18.2",
+    "multer": "^2.0.2",
     "mysql2": "^3.15.3",
     "nodemailer": "^7.0.12",
     "openai": "^6.16.0"

@@ -966,24 +966,24 @@ scrollDownBtn.addEventListener("click", () => {
         return;
       }
   
-      // revoke old blob preview
-      if (state.imageUrl && String(state.imageUrl).startsWith("blob:")) {
-        URL.revokeObjectURL(state.imageUrl);
+      addMsg("Uploading image…", "bot");
+  
+      try {
+        const out = await uploadImageFile(file);
+  
+        state.imageSource = out.image_source; // "upload"
+        state.imageKey = out.image_key;
+        state.imageUrl = out.image_url;       // "/uploads/user/..."
+        
+        addMsg("Image uploaded ✅", "bot");
+        submitRequest();
+      } catch (e) {
+        addMsg(e.message || "Upload failed. Try again or skip.", "bot");
+        requesterImageOptional();
       }
-  
-      state.imageSource = null;        
-      state.imageKey = null;
-  
-      const previewUrl = URL.createObjectURL(file);
-      state.imageUrl = previewUrl;
-  
-      addMsg("Image selected (preview only). To save an image with your request, please choose a default/AI image, or skip.", "bot");
-  
-      requesterImageOptional();
-  
-      pushHistory(state);
     });
   }
+  
 
   async function generateAiImage(topic) {
     const res = await fetch("/api/images/generate", {
@@ -996,6 +996,21 @@ scrollDownBtn.addEventListener("click", () => {
     if (!res.ok) throw new Error(data.message || "AI failed");
     return data; // { image_url, image_source:"ai", image_key }
   }  
+  
+  async function uploadImageFile(file) {
+    const fd = new FormData();
+    fd.append("image", file);
+  
+    const res = await fetch("/api/uploads/image", {
+      method: "POST",
+      credentials: "include",
+      body: fd,
+    });
+  
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || "Upload failed");
+    return data; // { image_url, image_source:"upload", image_key }
+  }
   
   
   async function submitRequest() {
@@ -1321,8 +1336,8 @@ function openImgDialog(images, onPick, onSkip) {
   /** ---- init ---- */
   (async function init() {
     // כשתחברי את ההתחברות מחדש, תחזירי את זה:
-    // const me = await requireLogin();
-    // if (!me) return;
+    const me = await requireLogin();
+    if (!me) return;
   
     setMode("chat");
     setComposerEnabled(false);

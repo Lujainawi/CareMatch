@@ -6,7 +6,7 @@ const session = require('express-session');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
-
+const multer = require("multer");
 const fs = require("fs");
 const OpenAI = require("openai");
 
@@ -17,6 +17,7 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware to parse JSON bodies from incoming requests
 app.use(express.json({ limit: "200kb" }));
+app.use(express.urlencoded({ extended: true }));
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -542,10 +543,11 @@ app.post("/api/requests", requireAuth, async (req, res) => {
     let image_source = String(req.body?.image_source || "").trim() || null;
     const image_key = String(req.body?.image_key || "").trim() || null;
     const image_url = String(req.body?.image_url || "").trim() || null;
+    
 
     if (image_source === "ai_preset") image_source = "ai";
 
-    const IMAGE_SOURCES = ["internal", "cloudinary", "ai"];
+    const IMAGE_SOURCES = ["internal", "cloudinary", "ai", "upload"];
     if (image_source && !IMAGE_SOURCES.includes(image_source)) {
       return res.status(400).json({ message: "Invalid image_source." });
     }
@@ -768,6 +770,45 @@ app.post('/api/auth/password/reset', resetLimiter, async (req, res) => {
     console.error('reset password error:', err);
     return res.status(500).json({ message: 'Something went wrong.' });
   }
+});
+
+// --- Uploads (local) ---
+const uploadDir = path.join(__dirname, "uploads", "user");
+fs.mkdirSync(uploadDir, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname || "").toLowerCase() || ".png";
+    const safeExt = [".png", ".jpg", ".jpeg", ".webp"].includes(ext) ? ext : ".png";
+    const name = `u_${req.session.userId}_${Date.now()}_${Math.random().toString(16).slice(2)}${safeExt}`;
+    cb(null, name);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype || !file.mimetype.startsWith("image/")) {
+      return cb(new Error("Only image files are allowed"));
+    }
+    cb(null, true);
+  },
+});
+
+app.post("/api/uploads/image", requireAuth, upload.single("image"), (req, res) => {
+  if (!req.file) return res.status(400).json({ message: "No file uploaded." });
+
+  // public URL served by: app.use("/uploads", express.static(...))
+  const image_url = `/uploads/user/${req.file.filename}`;
+
+  return res.json({
+    ok: true,
+    image_url,
+    image_source: "upload",
+    image_key: req.file.filename,
+  });
 });
 
 

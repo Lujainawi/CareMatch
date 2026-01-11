@@ -115,7 +115,7 @@ async function requireLogin() {
   
   
   (async function init() {
-    // await requireLogin();
+    await requireLogin();
   
     const params = new URLSearchParams(window.location.search);
   
