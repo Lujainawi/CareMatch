@@ -178,8 +178,8 @@
     box-shadow: 0 0 0 3px rgba(63, 54, 71, 0.18);
   }  
 
-
-  /* ===== Modal (Login OTP) ===== */
+/* 
+  
 .modal[aria-hidden="true"] { display: none; }
 .modal.is-open { display: block; }
 
@@ -216,4 +216,109 @@
 
 .btn--ghost {
   background: transparent;
+} 
+*/
+
+/* ===== Modal (Login OTP) — match Signup style ===== */
+.modal[aria-hidden="true"] { display: none; }
+.modal.is-open { display: grid; }
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.modal__overlay,
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 16, 24, 0.45);
+}
+
+.modal__panel,
+.modal-dialog {
+  position: relative;
+  width: min(520px, 92vw);
+  background: #f6eaea;
+  border: 1px solid rgba(63, 54, 71, 0.25);
+  padding: 18px 18px 16px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.18);
+}
+
+.modal__close,
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  color: #3f3647;
+
+  padding: 6px 8px;
+}
+
+.modal__close:focus-visible,
+.modal-close:focus-visible {
+  outline: 2px solid rgba(63, 54, 71, 0.55);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.modal-title {
+  margin: 0 0 6px 0;
+  font-size: 22px;
+  color: #3f3647;
+}
+
+.modal-desc {
+  margin: 0 0 12px 0;
+  color: #6b6272;
+  font-size: 14px;
+}
+
+.field--modal {
+  width: 100%;
+  margin: 10px 0 8px;
+}
+
+.modal__actions,
+.modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+/* Small button variant (like signup) */
+.btn-primary--small {
+  width: auto;
+  padding: 10px 14px;
+  font-size: 14px;
+}
+
+/* Link-style button (Resend) */
+.btn-link {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #3f3647;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 8px 0;
+  opacity: 0.9;
+}
+
+.btn-link:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  text-decoration: none;
 }

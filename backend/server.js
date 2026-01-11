@@ -8,7 +8,7 @@ const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 
 
-const { sendVerificationEmail } = require('./mailer');
+const { sendVerificationEmail, sendPasswordResetEmail } = require('./mailer');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -21,6 +21,14 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+const resetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 8,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 
 app.use('/api/auth', authLimiter);
 
@@ -83,6 +91,15 @@ function generateVerifyToken() {
 function generateMfaToken() {
   return crypto.randomBytes(32).toString('hex');
 }
+
+function generateResetToken() {
+  return crypto.randomBytes(32).toString('hex'); // 64 hex chars
+}
+
+function sha256Hex(input) {
+  return crypto.createHash('sha256').update(String(input)).digest('hex');
+}
+
 
 function maskEmail(email) {
   const [name, domain] = String(email || '').split("@");
@@ -466,7 +483,6 @@ app.post("/api/requests", requireAuth, async (req, res) => {
 
     if (is_money_request) {
       const n = Number(amount_needed);
-      // חשוב: לא לאפשר שלילי (הערת תקינות):contentReference[oaicite:5]{index=5}
       if (!Number.isFinite(n) || n <= 0) return res.status(400).json({ message: "Invalid amount_needed." });
       amount_needed = n;
     } else {
@@ -553,6 +569,115 @@ app.get("/api/requests", requireAuth, async (req, res) => {
     return res.status(500).json({ message: "Something went wrong." });
   }
 });
+
+
+
+// POST /api/auth/password/forgot
+app.post('/api/auth/password/forgot', resetLimiter, async (req, res) => {
+  try {
+    const email = normalizeEmail(req.body?.email);
+
+    const genericOk = () => res.json({ ok: true });
+
+    if (!email) return genericOk();
+
+    const [rows] = await db.query(
+      `SELECT id, email, email_verified_at
+       FROM users
+       WHERE email = ?
+       LIMIT 1`,
+      [email]
+    );
+
+    if (!rows.length) return genericOk();
+
+    const user = rows[0];
+
+    if (!user.email_verified_at) return genericOk();
+
+    await db.query(
+      `DELETE FROM password_reset_tokens
+       WHERE user_id = ? AND used_at IS NULL`,
+      [user.id]
+    );
+
+    const token = generateResetToken();
+    const token_hash = sha256Hex(token);
+
+    await db.query(
+      `INSERT INTO password_reset_tokens
+       (user_id, token_hash, expires_at, attempts, used_at, created_at)
+       VALUES
+       (?, ?, DATE_ADD(NOW(), INTERVAL 15 MINUTE), 0, NULL, NOW())`,
+      [user.id, token_hash]
+    );
+
+    const baseUrl = process.env.APP_BASE_URL || 'http://localhost:3000';
+    const resetUrl = `${baseUrl}/pages/resetPassword.html?token=${token}`;
+
+    try {
+      await sendPasswordResetEmail(user.email, resetUrl);
+    } catch (mailErr) {
+      console.error("reset mail failed:", mailErr);
+      await db.query("DELETE FROM password_reset_tokens WHERE token_hash = ?", [token_hash]);
+    }
+
+    return genericOk();
+  } catch (err) {
+    console.error('forgot password error:', err);
+    return res.json({ ok: true });
+  }
+});
+
+// POST /api/auth/password/reset
+app.post('/api/auth/password/reset', resetLimiter, async (req, res) => {
+  try {
+    const token = String(req.body?.token || '').trim();
+    const newPassword = String(req.body?.newPassword || '');
+
+    if (!token || newPassword.length < 8) {
+      return res.status(400).json({ message: 'Invalid input.' });
+    }
+
+    const token_hash = sha256Hex(token);
+
+    const [rows] = await db.query(
+      `SELECT id, user_id, expires_at, attempts, used_at
+       FROM password_reset_tokens
+       WHERE token_hash = ?
+       LIMIT 1`,
+      [token_hash]
+    );
+
+    if (!rows.length) return res.status(400).json({ message: 'Invalid or expired link.' });
+
+    const rec = rows[0];
+    if (rec.used_at) return res.status(400).json({ message: 'Invalid or expired link.' });
+
+    const [expCheck] = await db.query('SELECT NOW() > ? AS expired', [rec.expires_at]);
+    if (expCheck[0].expired) return res.status(400).json({ message: 'Invalid or expired link.' });
+
+    if (rec.attempts >= 5) return res.status(429).json({ message: 'Too many attempts. Try again later.' });
+
+    // להעלות attempts לפני כל דבר נוסף
+    await db.query('UPDATE password_reset_tokens SET attempts = attempts + 1 WHERE id = ?', [rec.id]);
+
+    const password_hash = await bcrypt.hash(newPassword, 10);
+
+    await db.query('UPDATE users SET password_hash = ? WHERE id = ?', [password_hash, rec.user_id]);
+    await db.query('UPDATE password_reset_tokens SET used_at = NOW() WHERE id = ?', [rec.id]);
+
+    // אם המשתמש היה מחובר בדפדפן הזה — עדיף לנתק אותו (session invalidate)
+    if (req.session) {
+      return req.session.destroy(() => res.json({ ok: true }));
+    }
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('reset password error:', err);
+    return res.status(500).json({ message: 'Something went wrong.' });
+  }
+});
+
 
 // Start listening for incoming HTTP requests
 app.listen(PORT, () => {
