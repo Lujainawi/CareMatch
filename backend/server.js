@@ -649,10 +649,10 @@ app.get("/api/requests", requireAuth, async (req, res) => {
     if (status && ALLOWED.status.includes(status)) {
       sql += " AND status = ?";
       params.push(status);
-    } else {
-      // default: only open requests
+    } else if (mine !== "1") {
+      // default only for "all requests"
       sql += " AND status = 'open'";
-    }
+    }  
 
     sql += " ORDER BY created_at DESC LIMIT 200";
 

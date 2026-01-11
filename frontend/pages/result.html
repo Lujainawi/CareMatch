@@ -30,12 +30,22 @@
         <h1 class="results-title">Results</h1>
         <p id="resultsSub" class="results-sub"></p>
 
-        <div id="activeFilters" class="filters-row" aria-label="Active filters"></div>
+        <!-- NEW: clickable filters -->
+        <div class="filters-panel" aria-label="Filters">
+          <div class="filters-title">Browse by topic</div>
+
+          <div id="topicFilters" class="filters-row" role="group" aria-label="Topic filters">
+            <!-- buttons rendered by JS -->
+          </div>
+
+          <div class="filters-meta">
+            <div id="activeFilters" class="filters-row" aria-label="Active filters"></div>
+          </div>
+        </div>
       </section>
 
       <section id="mySection" class="results-section" hidden>
         <h2 class="section-title">My requests</h2>
-        <p id="myEmpty" class="empty" hidden>No requests yet.</p>
         <ul id="myList" class="cards-grid" aria-label="My requests list"></ul>
       </section>
 
@@ -47,6 +57,6 @@
     </div>
   </main>
 
-  <script src="../js/result.js"></script>
+  <script type="module" src="../js/result.js"></script>
 </body>
 </html>
