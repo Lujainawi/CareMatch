@@ -33,4 +33,22 @@ async function sendVerificationEmail(toEmail, code) {
     });
 }
 
-module.exports = { sendVerificationEmail };
+async function sendPasswordResetEmail(toEmail, resetUrl) {
+  if (!toEmail || !String(toEmail).trim()) {
+    throw new Error("Missing recipient email (toEmail)");
+  }
+
+  const transporter = makeTransporter();
+  const from = process.env.MAIL_FROM || process.env.SMTP_USER;
+
+  const subject = "CareMatch: Reset your password";
+  const text =
+    `We received a request to reset your password.\n\n` +
+    `Reset link: ${resetUrl}\n\n` +
+    `If you didn't request this, you can ignore this email.`;
+
+  return transporter.sendMail({ from, to: toEmail, subject, text });
+}
+
+
+module.exports = { sendVerificationEmail, sendPasswordResetEmail };
