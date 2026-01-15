@@ -8,7 +8,6 @@ const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 const multer = require("multer");
 const fs = require("fs");
-const OpenAI = require("openai");
 
 
 const { sendVerificationEmail, sendPasswordResetEmail } = require('./mailer');
@@ -57,15 +56,6 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 
-const aiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 6,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
 const PROMPTS_BY_TOPIC = {
   health: "A warm, hopeful illustration about healthcare support and community help. No text.",
   education: "A bright illustration about learning support and school supplies. No text.",
@@ -75,47 +65,6 @@ const PROMPTS_BY_TOPIC = {
   social: "A supportive illustration about community volunteering and social help. No text.",
   other: "A general illustration about charity and helping hands. No text.",
 };
-
-app.post("/api/images/generate", requireAuth, aiLimiter, async (req, res) => {
-  try {
-    const topic = String(req.body?.topic || "other").trim();
-    if (!ALLOWED.topic.includes(topic)) {
-      return res.status(400).json({ message: "Invalid topic." });
-    }
-
-    const prompt = PROMPTS_BY_TOPIC[topic] || PROMPTS_BY_TOPIC.other;
-
-    // Generate (base64)
-    const r = await openai.images.generate({
-      model: "gpt-image-1",
-      prompt,
-      size: "1024x1024",
-    });
-
-    const b64 = r.data?.[0]?.b64_json;
-    if (!b64) return res.status(500).json({ message: "No image returned." });
-
-    const buf = Buffer.from(b64, "base64");
-
-    const dir = path.join(__dirname, "uploads", "ai");
-    fs.mkdirSync(dir, { recursive: true });
-
-    const fileName = `ai_${Date.now()}_${Math.random().toString(16).slice(2)}.png`;
-    const abs = path.join(dir, fileName);
-    fs.writeFileSync(abs, buf);
-
-    const image_url = `/uploads/ai/${fileName}`;
-    return res.json({
-      ok: true,
-      image_url,
-      image_source: "ai",
-      image_key: fileName.replace(".png", ""),
-    });
-  } catch (err) {
-    console.error("AI generate error:", err);
-    return res.status(500).json({ message: "AI generation failed." });
-  }
-});
 
 
 // Test route – to check if the backend is running

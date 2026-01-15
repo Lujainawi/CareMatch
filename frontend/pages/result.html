@@ -3,23 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Results | CareMatch</title>
+  <title>Requests | CareMatch</title>
 
   <link rel="stylesheet" href="../css/index.css" />
+  <link rel="stylesheet" href="../css/chat.css" />
   <link rel="stylesheet" href="../css/components/cards.css" />
   <link rel="stylesheet" href="../css/result.css" />
 </head>
 
 <body class="results-body">
-  <header class="chat-header">
+  <header class="chat-header results-navbar">
     <div class="container chat-header-inner">
-      <a class="chat-brand" href="../index.html">CareMatch</a>
+      <div class="chat-left">
+        <a class="chat-brand" href="../index.html" aria-label="CareMatch home">
+          <span>CareMatch</span>
+        </a>
+      </div>
 
       <nav class="chat-top-actions" aria-label="Results navigation">
         <div class="chat-controls" role="group" aria-label="Actions">
           <a class="chip-btn" href="chat.html">Back to chat</a>
           <button id="logoutBtn" class="chip-btn" type="button">Logout</button>
-        </div>
+
       </nav>
     </div>
   </header>
@@ -27,12 +32,14 @@
   <main class="results-page">
     <div class="container">
       <section class="results-head">
-        <h1 class="results-title">Results</h1>
+        <h1 class="results-title">Requests you can help with</h1>
         <p id="resultsSub" class="results-sub"></p>
 
-        <!-- NEW: clickable filters -->
         <div class="filters-panel" aria-label="Filters">
-          <div class="filters-title">Browse by topic</div>
+          <div class="filters-top">
+            <div class="filters-title">Filter by topic</div>
+            <p id="filterSummary" class="filters-summary" aria-live="polite"></p>
+          </div>
 
           <div id="topicFilters" class="filters-row" role="group" aria-label="Topic filters">
             <!-- buttons rendered by JS -->
@@ -50,12 +57,44 @@
       </section>
 
       <section class="results-section">
-        <h2 id="allTitle" class="section-title">All open requests</h2>
-        <p id="allEmpty" class="empty" hidden>No matching requests found.</p>
-        <ul id="allList" class="cards-grid" aria-label="All requests list"></ul>
+        <div class="section-head">
+          <h2 id="allTitle" class="section-title">Requests that match your choices</h2>
+          <span id="resultsCount" class="count-pill" aria-label="Results count"></span>
+        </div>
+
+        <div class="cards-panel">
+          <div id="allEmpty" class="empty-state" hidden>
+            <p class="empty">No matching requests found</p>
+            <p class="empty-hint">Try selecting another topic above.</p>
+          </div>
+
+          <ul id="allList" class="cards-grid" aria-label="All requests list"></ul>
+        </div>
       </section>
     </div>
   </main>
+
+        <!-- Footer -->
+        <footer class="site-footer" id="footer">
+          <div class="container footer-grid">
+            <div class="footer-left">
+              <h3 class="footer-brand">Care Match</h3>
+        
+              <div class="footer-contact">
+                <p class="footer-line">Phone: <a href="tel:+972501234567">+972 50-123-4567</a></p>
+                <p class="footer-line">Email: <a href="mailto:carematch.info@gmail.com">carematch.info@gmail.com</a></p>
+                <p class="footer-line">Location: Galilee, Israel</p>
+              </div>
+            </div>
+        
+            <div class="footer-right">
+              <a class="footer-link" href="privacy.html">Privacy Policy</a>
+              <a class="footer-link" href="accessibility.html">Accessibility Statement</a>
+        
+              <small class="footer-copy">© <span id="year"></span> CareMatch</small>
+            </div>
+          </div>
+        </footer>
 
   <script type="module" src="../js/result.js"></script>
 </body>

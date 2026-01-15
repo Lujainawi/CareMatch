@@ -88,7 +88,7 @@
   }
   
   .welcome-title{
-    font-size: clamp(56px, 10vw, 160px); /* קצת יותר גדול כדי שירגיש "על כל הדף" */
+    font-size: clamp(56px, 10vw, 160px); 
     letter-spacing: -0.02em;
     margin: 0 0 10px;
     text-align: center;
@@ -97,7 +97,7 @@
   width: 100vw;
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
-  padding-inline: 24px;   /* שיהיה אותו padding כמו .container */
+  padding-inline: 24px;   
    
 }
   

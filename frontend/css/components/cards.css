@@ -1,53 +1,77 @@
 /* Reusable Card Component */
 .card{
-    background: rgba(255,255,255,0.35);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    overflow: hidden;
-  }
-  
-  .card__img{
-    width: 100%;
-    height: 150px;
-    object-fit: cover;
-    display: block;
-    background: rgba(0,0,0,0.06);
-  }
-  
-  .card__body{
-    padding: 14px 14px 16px;
-  }
-  
-  .card__meta{
-    margin: 0 0 6px;
-    font-size: 12px;
-    color: var(--muted);
-  }
-  
-  .card__title{
-    margin: 0 0 6px;
-    font-size: 16px;
-  }
-  
-  .card__tags{
-    margin: 0 0 8px;
-    font-size: 13px;
-    color: var(--muted);
-  }
-  
-  .card__desc{
-    margin: 0 0 12px;
-    font-size: 13px;
-    line-height: 1.45;
-    color: var(--ink);
-  }
-  
-  .card__btn{
-    width: 100%;
-  }
-  
-  /* Request-specific sizing for carousel */
-  .card--request{
-    flex: 0 0 240px;
-    scroll-snap-align: start;
-  }  
+  background: rgba(255,255,255,0.90);
+  border: 1px solid rgba(58,50,64,.10);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 18px 50px rgba(43,38,48,.08);
+  transition: transform .14s ease, box-shadow .14s ease;
+}
+
+.card:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 24px 70px rgba(43,38,48,.12);
+}
+
+.card__img{
+  width: 100%;
+  height: 300px;
+  object-position: center;
+  display: block;
+  background: rgba(255,255,255,0.9);
+}
+
+.card__img[data-fit="cover"]{ object-fit: cover; }
+.card__img[data-fit="contain"]{
+  object-fit: contain;
+  padding: 12px;
+}
+
+
+.card__body{
+  padding: 14px 14px 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.card__meta{
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.card__title{
+  margin: 0;
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+.card__tags{
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.card__desc{
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink);
+
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card__btn{
+  width: 100%;
+}
+
+/* Request-specific sizing for carousel (safe to keep) */
+.card--request{
+  scroll-snap-align: start;
+}

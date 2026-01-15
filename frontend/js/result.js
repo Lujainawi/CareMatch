@@ -46,48 +46,48 @@ async function fetchRequests(queryParamsObj) {
 }
 
 function pickImageForRow(row) {
-  // Prefer DB image_url when exists (uploads/ai or uploads/user etc.)
-  if (row.image_url) return row.image_url;
-
-  // fallback images (adjust to your real files if needed)
-  const map = {
-    hospital: "../images/hospital.jpg",
-    school: "../images/school.jpg",
-    ngo: "../images/ngo.jpg",
-    nursing_home: "../images/nursing_home.jpg",
-    orphanage: "../images/orphanage.jpg",
-    private: "../images/private.jpg",
-    other: "../images/placeholder.jpg",
-  };
-  return map[row.category] || "../images/placeholder.jpg";
+  return row.image_url || "../images/placeholder.jpeg";
 }
 
+
 function rowToCardData(row) {
-  // Map DB row -> your shared card component shape
+  const hasRealPhoto = Boolean(row.image_url); // אם העלו תמונה
+  const isLogoLike = ["ngo", "hospital", "school", "nursing_home", "orphanage"].includes(row.category);
+
   return {
     image: pickImageForRow(row),
     imageAlt: "Request image",
+    imageFit: hasRealPhoto ? "cover" : (isLogoLike ? "contain" : "cover"),
+
     region: humanize(row.region),
-    nameType: humanize(row.category),            // shown in meta
-    displayName: `Topic: ${humanize(row.topic)}`,// shown in tags line
+    nameType: humanize(row.category),
+    displayName: `Topic: ${humanize(row.topic)}`,
     field: humanize(row.target_group),
     helpType: row.title || "Request",
-    shortDesc:
-      row.short_summary ||
-      (row.full_description ? String(row.full_description).slice(0, 160) : ""),
-    moreHref: "donate.html", // optional: change later to a real details page
+    shortDesc: row.short_summary || (row.full_description ? String(row.full_description).slice(0, 160) : ""),
+    moreHref: "donate.html",
   };
 }
 
 function renderList(listEl, rows) {
   listEl.innerHTML = "";
   const frag = document.createDocumentFragment();
-
-  rows.forEach((row) => {
-    frag.appendChild(createRequestCard(rowToCardData(row)));
-  });
-
+  rows.forEach((row) => frag.appendChild(createRequestCard(rowToCardData(row))));
   listEl.appendChild(frag);
+}
+
+function topicLabel(v) {
+  const map = {
+    "": "All topics",
+    health: "Health",
+    education: "Education",
+    arts: "Arts",
+    technology: "Technology",
+    basic_needs: "Basic needs",
+    social: "Social",
+    other: "Other",
+  };
+  return map[v ?? ""] ?? "All topics";
 }
 
 function renderTopicButtons({ initialTopic, onChange }) {
@@ -114,11 +114,9 @@ function renderTopicButtons({ initialTopic, onChange }) {
     btn.dataset.value = t.value;
 
     btn.addEventListener("click", () => {
-      // Update pressed state for all buttons
       [...wrap.querySelectorAll("button")].forEach((b) =>
         b.setAttribute("aria-pressed", String(b.dataset.value === t.value))
       );
-
       onChange(t.value);
     });
 
@@ -129,32 +127,32 @@ function renderTopicButtons({ initialTopic, onChange }) {
 (async function init() {
   await requireLogin();
 
-  const params = new URLSearchParams(window.location.search);
+  // footer year
+  const y = new Date().getFullYear();
+  const yearEl = $("yearNow");
+  if (yearEl) yearEl.textContent = String(y);
 
+  const params = new URLSearchParams(window.location.search);
   const mode = params.get("mode") || "donor";
 
-  // filters coming from chat.js
   const region = params.get("region") || "";
   const category = params.get("category") || "";
 
-  // donor uses donation_type in your current chat.js, backend expects help_type
   const donationType = params.get("donation_type") || "";
   const helpType = params.get("help_type") || donationType || "";
 
-  // topic is now user-clickable, but also can come from URL as initial
   let activeTopic = params.get("topic") || "";
 
   $("resultsSub").textContent =
     mode === "requester"
-      ? "Here are your requests and all matching requests."
-      : "Here are open requests that match your choices.";
+      ? "Here you can see your requests and explore other open requests."
+      : "Here are open requests that match your choices. If nothing fits, try another topic.";
 
   renderTopicButtons({
     initialTopic: activeTopic,
     onChange: async (newTopic) => {
       activeTopic = newTopic;
 
-      // keep URL in sync (no reload)
       const next = new URLSearchParams(window.location.search);
       if (activeTopic) next.set("topic", activeTopic);
       else next.delete("topic");
@@ -165,7 +163,6 @@ function renderTopicButtons({ initialTopic, onChange }) {
   });
 
   async function load() {
-    // Chips row (what is currently applied)
     buildActiveFilterChips({
       mode,
       region,
@@ -174,36 +171,49 @@ function renderTopicButtons({ initialTopic, onChange }) {
       topic: activeTopic,
     });
 
+    const summaryParts = [topicLabel(activeTopic)];
+    if (region) summaryParts.push(humanize(region));
+    if (category) summaryParts.push(humanize(category));
+    if (helpType) summaryParts.push(humanize(helpType));
+    const fs = $("filterSummary");
+    if (fs) fs.textContent = `Showing: ${summaryParts.join(" • ")}`;
+
     const base = {};
     if (region) base.region = region;
     if (category) base.category = category;
     if (helpType) base.help_type = helpType;
     if (activeTopic) base.topic = activeTopic;
 
-    // --- My requests: show only if there ARE any ---
     const myList = $("myList");
     $("mySection").hidden = true;
     myList.innerHTML = "";
 
     if (mode === "requester" || params.get("mine") === "1") {
       const myRows = await fetchRequests({ ...base, mine: "1" });
-
       if (myRows.length) {
         $("mySection").hidden = false;
         renderList(myList, myRows);
       }
     }
 
-    // --- All open requests (always open) ---
     const allRows = await fetchRequests({ ...base, status: "open" });
 
-    $("allEmpty").hidden = allRows.length > 0;
-    renderList($("allList"), allRows);
+    const allEmpty = $("allEmpty");
+    const allList = $("allList");
+    const countEl = $("resultsCount");
+
+    const hasResults = allRows.length > 0;
+    allEmpty.hidden = hasResults;
+    allList.hidden = !hasResults;
+
+    if (countEl) countEl.textContent = String(allRows.length);
+
+    if (hasResults) renderList(allList, allRows);
+    else allList.innerHTML = "";
   }
 
   await load();
 
-  // Logout button
   $("logoutBtn").addEventListener("click", async () => {
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     window.location.href = "logIn.html";

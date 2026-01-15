@@ -5,7 +5,7 @@ async function requireLogin() {
     try {
       const res = await fetch("/api/auth/me", { credentials: "include" });
       if (!res.ok) {
-        window.location.href = "logIn.html"; // chat.html בתוך /pages
+        window.location.href = "logIn.html"; 
         return null;
       }
       return await res.json();
@@ -42,20 +42,20 @@ async function requireLogin() {
 
 
   const ORG_DEFAULT_IMAGES = [
-    { key: "org_01", src: "../images/aharai.jpeg", alt: "Default image 1" },
-    { key: "org_02", src: "../images/appleseeds.jpeg", alt: "Default image 2" },
-    { key: "org_03", src: "../images/atidna.jpeg", alt: "Default image 3" },
-    { key: "org_04", src: "../images/Beit_Lssie_Shapiro.jpeg", alt: "Default image 4" },
-    { key: "org_05", src: "../images/druze_children.jpeg", alt: "Default image 5" },
-    { key: "org_06", src: "../images/latet.jpeg", alt: "Default image 6" },
-    { key: "org_07", src: "../images/melabev.jpeg", alt: "Default image 7" },
-    { key: "org_08", src: "../images/nezareth_hospital.jpeg", alt: "Default image 8" },
-    { key: "org_09", src: "../images/Pichon_Lev.jpeg", alt: "Default image 9" },
-    { key: "org_10", src: "../images/rambam.jpeg", alt: "Default image 10" },
-    { key: "org_11", src: "../images/sheba.jpeg", alt: "Default image 11" },
-    { key: "org_12", src: "../images/sos_children.jpeg", alt: "Default image 12" },
-    { key: "org_13", src: "../images/the_carmel_elders.jpeg", alt: "Default image 13" },
-    { key: "org_14", src: "../images/yad_sarah.jpeg", alt: "Default image 14" },
+    { key: "aharai", src: "../images/aharai.jpeg", alt: "Default image 1" },
+    { key: "appleseeds", src: "../images/appleseeds.jpeg", alt: "Default image 2" },
+    { key: "atidna", src: "../images/atidna.jpeg", alt: "Default image 3" },
+    { key: "Beit_Lssie_Shapiro", src: "../images/Beit_Lssie_Shapiro.jpeg", alt: "Default image 4" },
+    { key: "druze_children", src: "../images/druze_children.jpeg", alt: "Default image 5" },
+    { key: "latet", src: "../images/latet.jpeg", alt: "Default image 6" },
+    { key: "melabev", src: "../images/melabev.jpeg", alt: "Default image 7" },
+    { key: "nezareth_hospital", src: "../images/nezareth_hospital.jpeg", alt: "Default image 8" },
+    { key: "Pichon_Lev", src: "../images/Pichon_Lev.jpeg", alt: "Default image 9" },
+    { key: "rambam", src: "../images/rambam.jpeg", alt: "Default image 10" },
+    { key: "sheba", src: "../images/sheba.jpeg", alt: "Default image 11" },
+    { key: "sos_children", src: "../images/sos_children.jpeg", alt: "Default image 12" },
+    { key: "the_carmel_elders", src: "../images/the_carmel_elders.jpeg", alt: "Default image 13" },
+    { key: "yad_sarah", src: "../images/yad_sarah.jpeg", alt: "Default image 14" },
   ];
   
   // AI
@@ -920,27 +920,6 @@ scrollDownBtn.addEventListener("click", () => {
         },
       },
       {
-        label: "Generate with AI ",
-        onClick: async () => {
-          addMsg("Generate with AI (real)", "user");
-          addMsg("Generating image…", "bot");
-          try {
-            const topic = state.topic || "other";
-            const out = await generateAiImage(topic);
-      
-            state.imageSource = out.image_source; // "ai"
-            state.imageKey = out.image_key;
-            state.imageUrl = out.image_url;
-      
-            addMsg("Image generated ✅", "bot");
-            submitRequest();
-          } catch (e) {
-            addMsg(String(e.message || "AI error. Try again."), "bot");
-            requesterImageOptional();
-          }
-        },
-      },
-      {
         label: "Skip",
         onClick: () => {
           addMsg("Skip", "user");
@@ -983,19 +962,6 @@ scrollDownBtn.addEventListener("click", () => {
       }
     });
   }
-  
-
-  async function generateAiImage(topic) {
-    const res = await fetch("/api/images/generate", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ topic }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.message || "AI failed");
-    return data; // { image_url, image_source:"ai", image_key }
-  }  
   
   async function uploadImageFile(file) {
     const fd = new FormData();
@@ -1116,7 +1082,6 @@ scrollDownBtn.addEventListener("click", () => {
   let qImageUrl = null;
 
   const qChooseDefaultImg = document.getElementById("qChooseDefaultImg");
-  const qChooseAiImg = document.getElementById("qChooseAiImg");
   const qClearImg = document.getElementById("qClearImg");
   const qImgPreview = document.getElementById("qImgPreview");
   const qImgUpload = document.getElementById("qImgUpload");
@@ -1141,8 +1106,6 @@ scrollDownBtn.addEventListener("click", () => {
   
     // Org -> only default
     qChooseDefaultImg.disabled = false;
-    qChooseAiImg.disabled = isOrg; // disable for org
-    // אם תוסיפי Upload button - תעשי גם disabled = isOrg
   
     if (isOrg && qImageSource === "ai") {
       qImageSource = null; qImageKey = null; qImageUrl = null;
@@ -1169,20 +1132,6 @@ scrollDownBtn.addEventListener("click", () => {
       }
     );
   });  
-  
-  qChooseAiImg?.addEventListener("click", async () => {
-    setQuickError("");
-    const topic = (qReqTopic?.value || "other").trim() || "other";
-    try {
-      const out = await generateAiImage(topic);
-      qImageSource = out.image_source; // "ai"
-      qImageKey = out.image_key;
-      qImageUrl = out.image_url;
-      qSetPreview(qImageUrl);
-    } catch (e) {
-      setQuickError(e.message || "AI generation failed.");
-    }
-  });
   
   
   qClearImg?.addEventListener("click", () => {
