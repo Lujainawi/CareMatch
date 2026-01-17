@@ -1,3 +1,12 @@
+/* 
+   CareMatch - about.css
+   Purpose: Page-specific styles for About page.
+   Sections:
+   - Our Story (hero split layout: dark left + light right)
+   - Our Mission (two-column text grid)
+   - Team (simple grid of team cards)
+ */
+
 /* --- Section 1: Our Story --- */
 .about-hero{
     padding: 0;
@@ -7,13 +16,15 @@
   .about-hero__grid{
     display: grid;
     grid-template-columns: 1fr 1fr;
+
+    /* Keeps the hero visually strong across screens */
     min-height: clamp(420px, 60vh, 640px);
     margin-top: 22px;
   }
   
   /* Left panel */
   .about-hero__left{
-    background: var(--btn);       /* dark */
+    background: var(--btn);   
     color: #fff;
     padding: clamp(34px, 5vw, 72px);
     display: flex;

@@ -1,5 +1,14 @@
+/* 
+   CareMatch - donate.css
+   Purpose: Page-specific styles for the Donate page.
+   Layout:
+   - Two-column layout: image/media on the left + donation form panel on the right.
+   - Uses CSS Grid for clean alignment and easy responsiveness.
+*/
+
 .donate { background: var(--bg); }
 
+/* --- Main layout: media + form panel --- */
 .donate-wrap{
     display: grid;
     grid-template-columns: 1.05fr 0.95fr;
@@ -21,6 +30,7 @@
     display: block;
   }
 
+  /* Right panel: contains the form and short explanation text */
 .donate-panel{
   padding: clamp(22px, 4vw, 44px);
   display: grid;
@@ -40,6 +50,7 @@
 .donate-group{ border: 0; padding: 0; margin: 0; }
 .donate-label{ font-size: 12px; color: var(--muted); margin-bottom: 8px; }
 
+/* --- Segmented controls (type/amount/method) --- */
 .seg{
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -62,12 +73,14 @@
   background: rgba(255,255,255,0.22);
 }
 
+/* Amount buttons grid */
 .amount-grid{
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
 }
 
+/* Custom amount input row */
 .custom-amount{ display: grid; gap: 8px; }
 .custom-label{ font-size: 12px; color: var(--muted); }
 .custom-row{
@@ -87,6 +100,7 @@
   padding: 0;
 }
 
+/* Payment method buttons */
 .method-grid{
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -98,7 +112,7 @@
 .donate-cta{ width: 100%; margin-top: 2px; }
 .donate-status{ margin: 0; min-height: 18px; font-size: 13px; color: var(--muted); }
 
-/* modal */
+/* --- Modal --- */
 .donate-modal{
   position: fixed; inset: 0;
   background: rgba(0,0,0,0.35);
@@ -120,7 +134,7 @@
 .donate-modal-card h2{ margin: 0 0 6px; }
 .donate-modal-card p{ margin: 0 0 14px; color: var(--muted); }
 
-/* responsive */
+/* --- Responsive --- */
 @media (max-width: 980px){
   .donate-wrap{ grid-template-columns: 1fr; min-height: auto; }
   .donate-media{ height: 42vh; }

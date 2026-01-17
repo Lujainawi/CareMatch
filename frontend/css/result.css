@@ -1,3 +1,12 @@
+/*
+   CareMatch - result.css
+   Purpose: Styles for the Results page (filters + results grid + footer).
+   Layout idea:
+   - Clean navbar at the top with actions (back/logout/chat).
+   - Sticky filters panel so users can change filters while scrolling results.
+   - Card grid that becomes 2 columns and then 1 column on smaller screens.
+*/
+
 .results-body{
   min-height: 100vh;
   display: flex;
@@ -9,7 +18,7 @@
   padding: 22px 0 56px;
 }
 
-/* --- Navbar (clear separation) --- */
+/* --- Navbar --- */
 .results-navbar{
   background: rgba(255,255,255,0.35);
   backdrop-filter: blur(14px);
@@ -81,7 +90,7 @@
 
 /* Bigger brand in navbar */
 .results-navbar .chat-brand{
-  font-size: 22px;      /* תעלי ל-24 אם את רוצה יותר */
+  font-size: 22px;   
   font-weight: 900;
   letter-spacing: -0.02em;
 }
@@ -91,7 +100,7 @@
   height: 32px;
 }
 
-/* Navbar actions as plain text (no border, no background, no underline) */
+/* Navbar actions as plain text */
 .results-navbar .chat-controls .chip-btn{
   background: transparent !important;
   border: 0 !important;
@@ -101,7 +110,7 @@
 
   font-weight: 900;
   color: var(--ink);
-  text-decoration: none;  /* מסיר קו תחתון בלינק */
+  text-decoration: none; 
 }
 
 /* Force button to match the link exactly */
@@ -113,10 +122,10 @@
 
   font-family: inherit;
   font-size: inherit;
-  font-weight: 900;     /* זה מה שחסר לך בתמונה */
-  line-height: 1;       /* מיישר את הגובה כמו הלינק */
+  font-weight: 900;     
+  line-height: 1;     
 
-  padding: 6px 8px;     /* אותו padding */
+  padding: 6px 8px;    
   color: var(--ink);
   cursor: pointer;
 }
@@ -127,13 +136,13 @@
   background: rgba(58,50,64,.06) !important;
 }
 
-/* Focus for keyboard (נגישות) */
+/* Focus for keyboard  */
 .results-navbar .chat-controls .chip-btn:focus-visible{
   outline: 2px solid rgba(112, 89, 128, .55);
   outline-offset: 2px;
 }
 
-/* אם נשאר class של danger — לנטרל אותו */
+
 .results-navbar .chat-controls .chip-btn--danger{
   color: var(--ink) !important;
 }
@@ -192,7 +201,7 @@
   border-radius: 999px;
   font-weight: 900;
   color: var(--ink);
-  text-decoration: none; /* למקרה שזה <a> */
+  text-decoration: none; 
   transition: background .12s ease, transform .12s ease;
 }
 

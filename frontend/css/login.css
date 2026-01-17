@@ -1,6 +1,14 @@
+/* 
+   CareMatch - login.css
+   Purpose: Styles for Login.
+   Layout:
+   - Centered authentication card with simple, readable form fields.
+   - Password field includes a "Show/Hide" button (positioned inside the input).
+ */
+
 /* Page background */
 .auth-page {
-    background: #f6eaea; /* soft pink like your mock */
+    background: #f6eaea;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -80,6 +88,7 @@
     box-shadow: 0 0 0 3px rgba(63, 54, 71, 0.15);
   }
   
+  /* Validation state used by JS when input is invalid */
   .input--invalid {
     border-color: #c0392b;
     box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.12);
@@ -108,7 +117,7 @@
     padding-right: 70px;
   }
   
-  /* Softer "Show" button (no box) */
+  /* Softer "Show" button */
   .password-toggle {
     position: absolute;
     top: 50%;
@@ -178,48 +187,13 @@
     box-shadow: 0 0 0 3px rgba(63, 54, 71, 0.18);
   }  
 
-/* 
-  
-.modal[aria-hidden="true"] { display: none; }
-.modal.is-open { display: block; }
 
-.modal__overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,.45);
-}
-
-.modal__panel {
-  position: fixed;
-  left: 50%; top: 50%;
-  transform: translate(-50%, -50%);
-  width: min(520px, calc(100% - 32px));
-  background: #fff;
-  border-radius: 16px;
-  padding: 20px;
-}
-
-.modal__close {
-  position: absolute;
-  top: 10px; right: 12px;
-  border: 0;
-  background: transparent;
-  font-size: 24px;
-  cursor: pointer;
-}
-
-.modal__actions {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  margin-top: 14px;
-}
-
-.btn--ghost {
-  background: transparent;
-} 
-*/
-
-/* ===== Modal (Login OTP) — match Signup style ===== */
+/*
+   Modal
+   Purpose:
+   - After password is correct, we ask for a 6-digit OTP (sent by email).
+   - This modal uses a backdrop + centered panel to keep focus on the OTP step.
+ */  
 .modal[aria-hidden="true"] { display: none; }
 .modal.is-open { display: grid; }
 
