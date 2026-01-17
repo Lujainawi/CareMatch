@@ -1,6 +1,15 @@
-/* frontend/js/result.js */
+/**
+ * @file result.js
+ * @description Manages the display of request results based on user filters and login status.
+ * This script fetches requests from the backend API, applies user-selected filters,
+ * and dynamically renders request cards on the results page.
+ */
 import { createRequestCard } from "./components/requestCard.js";
 
+/**
+ * @description Ensures the user is logged in by checking the session with the backend.
+ * @returns  {Promise<Object|null>} User data or redirects to login.
+ */
 async function requireLogin() {
   const res = await fetch("/api/auth/me", { credentials: "include" });
   if (!res.ok) {
@@ -10,14 +19,27 @@ async function requireLogin() {
   return res.json();
 }
 
+/**
+ * @description Helper for document.getElementById
+ */
 function $(id) {
   return document.getElementById(id);
 }
 
+
+/**
+ * @description Converts underscores to spaces and capitalizes words for better readability.
+ * @param {string} v - The string to humanize.
+ * @returns {string} The humanized string.
+ */
 function humanize(v) {
   return String(v || "").replaceAll("_", " ");
 }
 
+/**
+ * @description Builds and displays filter chips based on active filters.
+ * @param {Object} filters - The active filters.
+ */
 function buildActiveFilterChips(filters) {
   const wrap = $("activeFilters");
   wrap.innerHTML = "";
@@ -31,6 +53,11 @@ function buildActiveFilterChips(filters) {
   });
 }
 
+/**
+ * @description Fetches requests from the backend API based on query parameters.
+ * @param {Object} queryParamsObj - The query parameters as key-value pairs.
+ * @returns {Promise<Array>} The list of requests.
+ */
 async function fetchRequests(queryParamsObj) {
   const qs = new URLSearchParams(queryParamsObj);
   const res = await fetch(`/api/requests?${qs.toString()}`, { credentials: "include" });
@@ -45,11 +72,21 @@ async function fetchRequests(queryParamsObj) {
   return data.rows || [];
 }
 
+/**
+ * @description Picks the appropriate image URL for a request row.
+ * @param {Object} row - The request row data.
+ * @returns {string} The image URL.
+ */ 
 function pickImageForRow(row) {
   return row.image_url || "../images/placeholder.jpeg";
 }
 
 
+/**
+ * @description Converts a request row into card data for rendering.
+ * @param {Object} row - The request row data.
+ * @returns {Object} The card data.
+ */
 function rowToCardData(row) {
   const hasRealPhoto = Boolean(row.image_url); // אם העלו תמונה
   const isLogoLike = ["ngo", "hospital", "school", "nursing_home", "orphanage"].includes(row.category);
@@ -69,6 +106,12 @@ function rowToCardData(row) {
   };
 }
 
+
+/**
+ * @description Renders a list of request cards into the specified list element.
+ * @param {HTMLElement} listEl - The container element for the request cards.
+ * @param {Array} rows - The list of request rows to render.
+ */ 
 function renderList(listEl, rows) {
   listEl.innerHTML = "";
   const frag = document.createDocumentFragment();
@@ -76,6 +119,11 @@ function renderList(listEl, rows) {
   listEl.appendChild(frag);
 }
 
+/**
+ * @description Provides a human-readable label for a given topic value.
+ * @param {string} v - The topic value.
+ * @returns {string} The corresponding topic label.
+ */ 
 function topicLabel(v) {
   const map = {
     "": "All topics",
@@ -90,6 +138,9 @@ function topicLabel(v) {
   return map[v ?? ""] ?? "All topics";
 }
 
+/**
+ * @description Renders topic filter buttons and manages their state.
+ */
 function renderTopicButtons({ initialTopic, onChange }) {
   const topics = [
     { value: "", label: "All" },
@@ -124,6 +175,10 @@ function renderTopicButtons({ initialTopic, onChange }) {
   });
 }
 
+/**
+ * @description Initializes the results page by ensuring user login,
+ * setting up filters, and loading request data.
+ */
 (async function init() {
   await requireLogin();
 
@@ -162,6 +217,9 @@ function renderTopicButtons({ initialTopic, onChange }) {
     },
   });
 
+  /**
+   * @description Loads and displays requests based on current filters.
+   */
   async function load() {
     buildActiveFilterChips({
       mode,
@@ -195,7 +253,8 @@ function renderTopicButtons({ initialTopic, onChange }) {
         renderList(myList, myRows);
       }
     }
-
+    
+    // Main results section
     const allRows = await fetchRequests({ ...base, status: "open" });
 
     const allEmpty = $("allEmpty");
@@ -213,7 +272,7 @@ function renderTopicButtons({ initialTopic, onChange }) {
   }
 
   await load();
-
+  // Logout button handler
   $("logoutBtn").addEventListener("click", async () => {
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     window.location.href = "logIn.html";

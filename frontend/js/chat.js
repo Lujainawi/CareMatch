@@ -1,6 +1,18 @@
-/* frontend/js/chat.js */
+/**
+ * @file chat.js
+ * @description Chat wizard for CareMatch: guides donors/requesters through questions, posts requests,
+ *              and redirects to results. Includes a quick-form mode and optional image selection/upload.
+ * @notes
+ * - Uses cookie-based sessions (credentials: "include") and an auth guard (requireLogin).
+ * - Uses a simple in-memory state machine with history snapshots for the Back button.
+ */
 
 /** ---- Auth guard (chat must be after login) ---- */
+
+/**
+ * @description Ensures the user is logged in by checking the /api/auth/me endpoint.
+ * @returns  {Promise<Object|null>} The user data if logged in, otherwise redirects to logIn.html.
+ */
 async function requireLogin() {
     try {
       const res = await fetch("/api/auth/me", { credentials: "include" });
@@ -16,31 +28,32 @@ async function requireLogin() {
   }
   
   /** ---- UI helpers ---- */
+  // General chat elements
   const chatLog = document.getElementById("chatLog");
   const choicesEl = document.getElementById("choices");
   const textForm = document.getElementById("textForm");
   const textInput = document.getElementById("textInput");
   const sendBtn = textForm.querySelector('button[type="submit"]');
-
   const imageInput = document.getElementById("imageInput");
   
+  // Feedback/progress
   const progressText = document.getElementById("progressText");
   const hintText = document.getElementById("hintText");
-  
   const backBtn = document.getElementById("backBtn");
   const restartBtn = document.getElementById("restartBtn");
   const endBtn = document.getElementById("endBtn");
   
+  //Mode Switching
   const modeChat = document.getElementById("modeChat");
   const modeQuick = document.getElementById("modeQuick");
-
   const scrollDownBtn = document.getElementById("scrollDownBtn");
 
+  // End dialog elements
   const endDialog = document.getElementById("endDialog");
   const endCancelBtn = document.getElementById("endCancelBtn");
   const endConfirmBtn = document.getElementById("endConfirmBtn");
 
-
+  //Image presets organizations 
   const ORG_DEFAULT_IMAGES = [
     { key: "aharai", src: "../images/aharai.jpeg", alt: "Default image 1" },
     { key: "appleseeds", src: "../images/appleseeds.jpeg", alt: "Default image 2" },
@@ -58,8 +71,7 @@ async function requireLogin() {
     { key: "yad_sarah", src: "../images/yad_sarah.jpeg", alt: "Default image 14" },
   ];
   
-  // AI
-// במקום AI_PRESETS_BY_TOPIC:
+// AI preset images 
 const AI_IMAGES_BY_TOPIC = {
   health: [
     { key: "ai_health_1", label: "Health 1", src: "../images/ai/health_1.png", alt: "Health preset 1" },
@@ -92,11 +104,19 @@ const AI_IMAGES_BY_TOPIC = {
   ],
 }; 
   
+  /**
+   * @description Updates the visual state of the 'Back' button based on history depth.
+   */
   function updateBackButton() {
     if (!backBtn) return;
     backBtn.disabled = history.length <= 1;
   }  
 
+  /**
+ * @description Renders a grid of image options within the chat interface.
+ * @param {Array} images - List of image objects to display.
+ * @param {Function} onPick - Callback function when an image is chosen.
+ */
   function setImageGrid(images, onPick) {
     choicesEl.innerHTML = "";
     choicesEl.classList.add("is-image-grid");
@@ -147,10 +167,11 @@ const AI_IMAGES_BY_TOPIC = {
     choicesEl.appendChild(skipRow);
   }
 
+/** ---- Quick form mode ---- */
 const chatView = document.getElementById("chatView");
 const quickView = document.getElementById("quickView");
 const quickForm = document.getElementById("quickForm");
-
+// Form fields elements
 const qIntent = document.getElementById("qIntent");
 const qDonationType = document.getElementById("qDonationType");
 const qRegion = document.getElementById("qRegion");
@@ -171,11 +192,22 @@ const qAmountNeeded = document.getElementById("qAmountNeeded");
 const qError = document.getElementById("qError");
 const qSubmitBtn = document.getElementById("qSubmitBtn");
 
+/**
+ * @description Displays error messages specific to the Quick Form.
+ * @param {string} msg - Sets an error message in the quick form UI
+ */
 function setQuickError(msg) {
   if (!qError) return;
   qError.textContent = msg || "";
 }
 
+
+/**
+ * @description Synchronizes the Quick Form visibility and button text based on user input.
+ * @notes 
+ * - Toggles between 'donor' and 'requester' fields.
+ * - Dynamically updates the submit button label based on donation type (money vs volunteer).
+ */
 function syncQuickFormUI() {
   const intent = qIntent.value;
 
@@ -202,12 +234,16 @@ function syncQuickFormUI() {
   setQuickError("");
 }
 
+
 qIntent?.addEventListener("change", syncQuickFormUI);
 qDonationType?.addEventListener("change", syncQuickFormUI);
 qHelpType?.addEventListener("change", syncQuickFormUI);
 syncQuickFormUI();
 
-
+/**
+ * @description Toggles the application between 'Chat' mode and 'Quick' (Form) mode.
+ * @param {string} mode - The target mode ('quick' or 'chat').
+ */
 function setMode(mode) {
   const isQuick = mode === "quick";
 
@@ -222,24 +258,38 @@ function setMode(mode) {
   modeChat.setAttribute("aria-pressed", String(!isQuick));
 }
 
+/**
+ * @description Checks if the user is scrolled near the bottom of a container.
+ * @param {HTMLElement} el - The scrollable element.
+ * @param {number} threshold - Distance from bottom in pixels to trigger 'true'.
+ * @returns {boolean}
+ */
 function isNearBottom(el, threshold = 40) {
   return el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
 }
 
+/**
+ * @description Controls the visibility of the 'Scroll to Bottom' button based on scroll position.
+ */
 function updateScrollDownButton() {
   if (!scrollDownBtn) return;
   scrollDownBtn.hidden = isNearBottom(chatLog);
 }
-
+// Scroll event listener
 chatLog.addEventListener("scroll", updateScrollDownButton);
 
+//Smooth scroll to bottom on button click
 scrollDownBtn.addEventListener("click", () => {
   chatLog.scrollTo({ top: chatLog.scrollHeight, behavior: "smooth" });
   updateScrollDownButton();
 });
 
 
-
+  /**
+   * @description Enables or disables the text input area.
+   * @param {boolean} enabled - Whether the user can type. 
+   * @param {string} placeholder - Custom text to show in the input.
+   */
   function setComposerEnabled(enabled, placeholder = "") {
     textForm.hidden = false;
   
@@ -252,6 +302,13 @@ scrollDownBtn.addEventListener("click", () => {
     if (enabled) textInput.focus();
   }
   
+
+  /**
+ * @description Appends a message bubble to the chat log.
+ * @param {string} text - Message content.
+ * @param {string} who - The sender ('bot' or 'user').
+ * @notes Automatically scrolls to bottom if the user was already at the bottom.
+ */
   let suppressMsgs = false;
   function addMsg(text, who = "bot") {
     if (suppressMsgs) return;
@@ -269,6 +326,10 @@ scrollDownBtn.addEventListener("click", () => {
     updateScrollDownButton();
   }  
   
+  /**
+ * @description Clears existing choices and renders a new set of action buttons.
+ * @param {Array<Object>} buttons - Array of button definitions {label, onClick}.
+ */
   function setChoices(buttons = []) {
     choicesEl.innerHTML = "";
     setComposerEnabled(false, "Choose an option below…");
@@ -293,8 +354,15 @@ scrollDownBtn.addEventListener("click", () => {
   }
   
   /** ---- Text question helper ---- */
+
+
+  /** 
+   * @description Helper to manage text-based questions in the chat flow.
+   * @param {string} prompt - The bot's question.
+   * @param {string|Function} placeholder - Input placeholder or the handler function.
+   * @param {Function} [handler] - The callback function to execute on submit.
+   */
   let pendingTextHandler = null;
-  
   function askText(prompt, placeholder, handler) {
     if (typeof placeholder === "function") {
       handler = placeholder;
@@ -304,7 +372,7 @@ scrollDownBtn.addEventListener("click", () => {
     addMsg(prompt, "bot");
   
     // clear choices and enable typing
-    choicesEl.innerHTML = "";
+    choicesEl.innerHTML = ""; 
     pendingTextHandler = handler;
   
     textForm.hidden = false;
@@ -333,13 +401,17 @@ scrollDownBtn.addEventListener("click", () => {
     handler(val);
   });
   
+  /**
+   * @description Redirects the user to the results page with search parameters.
+   * @param {Object} paramsObj - Key-value pairs of filter criteria.
+   */
   function goToResults(paramsObj) {
     const params = new URLSearchParams(paramsObj);
     window.location.href = `result.html?${params.toString()}`;
   }
   
   /** ---- Simple state + history ---- */
-  let history = [];
+  let history = []; // Array to store state snapshots for 'Back' functionality
   let state = {
     mode: null, // null / donor / requester
   
@@ -364,6 +436,10 @@ scrollDownBtn.addEventListener("click", () => {
   };
   
   
+  /**
+   * @description Saves a deep-cloned snapshot of the current state and chat HTML.
+   * @param {Object} snapshot - Current application state.
+   */
   function pushHistory(snapshot) {
     const snap = JSON.parse(JSON.stringify(snapshot));
     snap.__chatHtml = chatLog.innerHTML;  
@@ -371,6 +447,11 @@ scrollDownBtn.addEventListener("click", () => {
     updateBackButton();
   }
   
+  /**
+   * @description Restores the previous state snapshot from history.
+   * @returns {Object|null} The previous state object.
+   */
+
   function popHistory() {
     if (history.length <= 1) return null;
     history.pop();
@@ -378,7 +459,9 @@ scrollDownBtn.addEventListener("click", () => {
     return JSON.parse(JSON.stringify(history[history.length - 1]));
   }
   
-  
+  /**
+   *  @description Resets the entire chat state and UI to the initial state.
+   */
   function resetAll() {
     history = [];
     state = {
@@ -405,7 +488,11 @@ scrollDownBtn.addEventListener("click", () => {
     chatLog.innerHTML = "";
     updateBackButton();
   }
-
+   
+  /**
+   * @description Displays the donor category question in the chat flow.
+   * @param {string} type - The donation type (e.g., 'volunteer').
+   */
   function showDonorCategoryQuestion(type) {
     progressText.textContent = "Step 4";
     hintText.textContent = "";
@@ -423,6 +510,10 @@ scrollDownBtn.addEventListener("click", () => {
     pushHistory(state);
   }
   
+  /**
+   * @description Displays the donor topic question in the chat flow.
+   * @param {string} type - The donation type (e.g., 'volunteer').
+   */
   function showDonorTopicQuestion(type) {
     progressText.textContent = "Step 5";
     hintText.textContent = "";
@@ -441,6 +532,10 @@ scrollDownBtn.addEventListener("click", () => {
     pushHistory(state);
   }
   
+  /**
+   * @description Renders the chat interface based on the current state.
+   * Uses the state machine to determine which question to ask next.
+   */
   function renderFromState() {
     pendingTextHandler = null;
     choicesEl.classList.remove("is-image-grid");
@@ -472,14 +567,14 @@ scrollDownBtn.addEventListener("click", () => {
       return;
     }
   
-    // 2) Donor flow
+    // ------- Donor flow -------
     if (state.mode === "donor") {
       if (!state.donationType) {
         donorContribute();
         return;
       }
   
-      // money: יראה שוב את מסך "Go to Donate"
+      // Direct redirect for monetary donations
       if (state.donationType === "money") {
         progressText.textContent = "Step 2";
         hintText.textContent = "";
@@ -488,7 +583,7 @@ scrollDownBtn.addEventListener("click", () => {
         return;
       }
   
-      // volunteer:
+      // volunteer flow
       if (!state.region) {
         donorFiltersThenResults("volunteer"); // שאלה על Region
         return;
@@ -501,7 +596,8 @@ scrollDownBtn.addEventListener("click", () => {
         showDonorTopicQuestion("volunteer"); // שאלה על Topic
         return;
       }
-  
+
+      // If all fields are present, navigate to results
       goToResults({
         mode: "donor",
         donation_type: "volunteer",
@@ -512,7 +608,7 @@ scrollDownBtn.addEventListener("click", () => {
       return;
     }
   
-    // 3) Requester flow
+    // -------- Requester flow --------
     if (state.mode === "requester") {
       if (!state.helpType) { requesterPickHelpType(); return; }
       if (!state.requestFor) { requesterWhoFor(); return; }
@@ -531,7 +627,10 @@ scrollDownBtn.addEventListener("click", () => {
     }
   }  
   
-  /** ---- Flow ---- */
+  /**
+   * @description Entry point for the chatbot. Resets session and greets the user.
+   * @param {string} userName - The name of the logged-in user. 
+   */
   function startFlow(userName = "there") {
     resetAll();
   
@@ -565,6 +664,10 @@ scrollDownBtn.addEventListener("click", () => {
   }
   
   /** ---------------- DONOR ---------------- */
+
+  /**
+   * @description Step 2 (Donor): Determines the donation method.
+   */
   function donorContribute() {
     progressText.textContent = "Step 2";
     hintText.textContent = "";
@@ -599,10 +702,14 @@ scrollDownBtn.addEventListener("click", () => {
     pushHistory(state);
   }
   
+  /**
+   * @description Asks donor for region and then shows results.
+   * @param {string} type - The donation type (e.g., 'volunteer').
+   */
   function donorFiltersThenResults(type) {
     progressText.textContent = "Step 3";
     hintText.textContent = "";
-  
+
     addMsg("Where would you like to help?");
     setChoices([
       { label: "North", onClick: () => pickRegion("north", type) },
@@ -615,6 +722,11 @@ scrollDownBtn.addEventListener("click", () => {
     pushHistory(state);
   }
   
+  /**
+   * @description Updates the donor's region and moves to organization category selection.
+   * @param {string} region - The selected geographic area.
+   * @param {string} type - The donation type. 
+   */
   function pickRegion(region, type) {
     addMsg(region, "user");
     state.region = region;
@@ -635,13 +747,22 @@ scrollDownBtn.addEventListener("click", () => {
     pushHistory(state);
   }
   
+  /**
+   * @description Updates the donor's preferred organization category and moves to topic selection.
+   * @param {string} category - The selected organization type.
+   * @param {string} type - The donation type.
+   */
   function pickCategory(category, type) {
     addMsg(category, "user");
     state.category = category;
     showDonorTopicQuestion(type); 
   }
   
-  
+  /**
+   * @description Updates the donor's preferred topic and shows matching results.
+   * @param {string} topic - The selected topic.
+   * @param {string} type - The donation type.
+   */
   function pickTopic(topic, type) {
     addMsg(topic, "user");
     state.topic = topic;
@@ -664,6 +785,10 @@ scrollDownBtn.addEventListener("click", () => {
   
   
   /** ---------------- REQUESTER (I need help) ---------------- */
+  
+  /**
+   * @description  Initializes the request creation process.
+   */
   function requesterIntro() {
     progressText.textContent = "Step 2";
     hintText.textContent = "";
@@ -671,7 +796,10 @@ scrollDownBtn.addEventListener("click", () => {
     addMsg("Thanks — I’ll ask a few quick questions, publish your request, and then show matching results.");
     requesterPickHelpType();
   }
-  
+      
+  /**
+   * @description Asks the requester what type of help they need.
+   */   
   function requesterPickHelpType() {
     addMsg("What kind of help do you need?");
     setChoices([
@@ -711,6 +839,9 @@ scrollDownBtn.addEventListener("click", () => {
     pushHistory(state);
   }
   
+  /**
+   * @description Asks the requester who the request is for (organization or individual).
+   */
   function requesterWhoFor() {
     progressText.textContent = "Step 3";
   
@@ -738,6 +869,10 @@ scrollDownBtn.addEventListener("click", () => {
     pushHistory(state);
   }
   
+
+  /**
+   * @description Asks the requester about the type of organization.
+   */
   function requesterOrgType() {
     progressText.textContent = "Step 4";
   
@@ -754,12 +889,19 @@ scrollDownBtn.addEventListener("click", () => {
     pushHistory(state);
   }
   
+  /**
+   * @description Sets the requester organization category and proceeds to target group selection.
+   * @param {string} cat - The selected organization category.
+   */
   function setRequesterCategory(cat) {
     addMsg(cat, "user");
     state.category = cat;
     requesterTargetGroup();
   }
   
+  /**
+   * @description Asks the requester about the target group for the request.
+   */
   function requesterTargetGroup() {
     progressText.textContent = "Step 5";
   
@@ -777,12 +919,19 @@ scrollDownBtn.addEventListener("click", () => {
     pushHistory(state);
   }
   
+  /**
+   * @description Sets the requester target group and proceeds to topic selection.
+   * @param {string} g - The selected target group.
+   */
   function setTargetGroup(g) {
     addMsg(g, "user");
     state.targetGroup = g;
     requesterTopic();
   }
   
+  /**
+   * @description Asks the requester about the topic of the request.
+   */
   function requesterTopic() {
     progressText.textContent = "Step 6";
   
@@ -800,12 +949,19 @@ scrollDownBtn.addEventListener("click", () => {
     pushHistory(state);
   }
   
+  /**
+   * @description Sets the requester topic and proceeds to region selection.
+   * @param {string} t - The selected topic.
+   */
   function setTopic(t) {
     addMsg(t, "user");
     state.topic = t;
     requesterRegion();
   }
   
+  /**
+   * @description Asks the requester about the region for the request.
+   */ 
   function requesterRegion() {
     progressText.textContent = "Step 7";
   
@@ -821,12 +977,19 @@ scrollDownBtn.addEventListener("click", () => {
     pushHistory(state);
   }
   
+  /**
+   * @description Sets the requester region and proceeds to title input.
+   * @param {string} r - The selected region.
+   */
   function setRegion(r) {
     addMsg(r, "user");
     state.region = r;
     requesterTitle();
   }
   
+  /**
+   * @description Asks the requester for a short title for their request.
+   */
   function requesterTitle() {
     progressText.textContent = "Step 8";
   
@@ -839,7 +1002,9 @@ scrollDownBtn.addEventListener("click", () => {
       }
     );
   }
-  
+  /**
+   * @description Asks the requester for a detailed description of their request.
+   */
   function requesterDescription() {
     progressText.textContent = "Step 9";
   
@@ -858,6 +1023,9 @@ scrollDownBtn.addEventListener("click", () => {
     );
   }
   
+  /**
+   * @description Asks the requester for the amount of money needed.
+   */
   function requesterAmountNeeded() {
     progressText.textContent = "Step 10";
   
@@ -878,9 +1046,11 @@ scrollDownBtn.addEventListener("click", () => {
   }
   
   
-  /** Optional image step (scaffold)
-   *  Cloudinary / AI will be connected later.
-   *  DB fields recommended: image_url / image_source / image_key:contentReference[oaicite:3]{index=3}
+  /**
+   * @description Step 11 (Requester): Handles optional image attachment.
+   * @notes 
+   * - Organizations: Choose from a predefined grid of internal assets.
+   * - Individuals: Options to upload a personal file, use AI (scaffold), or skip.
    */
   function requesterImageOptional() {
     progressText.textContent = "Step 11";
@@ -935,7 +1105,10 @@ scrollDownBtn.addEventListener("click", () => {
     pushHistory(state);
   }
    
-  
+  /**
+   * @description Sets up the image upload input listener.
+   * @notes Handles file selection, upload process, and error management.
+   */
   if (imageInput) {
     imageInput.addEventListener("change", async () => {
       const file = imageInput.files && imageInput.files[0];
@@ -963,6 +1136,13 @@ scrollDownBtn.addEventListener("click", () => {
     });
   }
   
+
+  /**
+   * @description Uploads an image file to the server.
+   * @param {File} file - The image file to upload.
+   * @returns {Promise<Object>} Resolves with upload details { image_url, image_source, image_key }.    
+   * @throws {Error} If the upload fails.
+   */
   async function uploadImageFile(file) {
     const fd = new FormData();
     fd.append("image", file);
@@ -978,7 +1158,9 @@ scrollDownBtn.addEventListener("click", () => {
     return data; // { image_url, image_source:"upload", image_key }
   }
   
-  
+  /**
+   * @description Finalizes and submits the request to the server.
+   */
   async function submitRequest() {
     progressText.textContent = "Done";
     hintText.textContent = "";
@@ -1004,8 +1186,7 @@ scrollDownBtn.addEventListener("click", () => {
       title: state.title,
       full_description: state.fullDescription,
       amount_needed: state.helpType === "money" ? state.amountNeeded : null,
-  
-      // ✅ image fields (optional)
+
       image_url,
       image_source: mappedImageSource,
       image_key: mappedImageSource ? (state.imageKey || null) : null,
@@ -1032,7 +1213,10 @@ scrollDownBtn.addEventListener("click", () => {
     }
   }  
   
-  /** ---- Buttons ---- */
+  /** ---- Navigation Event Listeners ---- */
+  /**
+   * @description Handles the 'Back' button click to restore previous state.
+   */
   backBtn.addEventListener("click", () => {
     const prev = popHistory();
     if (!prev) return;
@@ -1247,12 +1431,20 @@ scrollDownBtn.addEventListener("click", () => {
   
 
 
-  /* Quick Form - Dialog */ 
+  /* -------- Quick Form - Dialog -------- */ 
+
+// Modal dialog for image selection
 const imgDialog = document.getElementById("imgDialog");
 const imgDialogGrid = document.getElementById("imgDialogGrid");
 const imgDialogCancel = document.getElementById("imgDialogCancel");
 const imgDialogSkip = document.getElementById("imgDialogSkip");
 
+/**
+ * @description Opens a modal dialog to select an image from a grid.
+ * @param {Array<Object>} images - Array of image objects {src, alt, label, key}.
+ * @param {Function} onPick - Callback function triggered when an image is selected. 
+ * @param {Function} [onSkip] - Optional callback for when the user skips the selection.
+ */
 function openImgDialog(images, onPick, onSkip) {
   imgDialogGrid.innerHTML = "";
 
@@ -1260,6 +1452,7 @@ function openImgDialog(images, onPick, onSkip) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "img-choice";
+    
     btn.innerHTML = `
       <img src="${imgObj.src}" alt="${imgObj.alt}">
       <span>${imgObj.label || imgObj.key}</span>
@@ -1276,15 +1469,18 @@ function openImgDialog(images, onPick, onSkip) {
     imgDialog.close();
     onSkip?.();
   };
-
+  
   imgDialog.showModal();
 }
 
   
   
   /** ---- init ---- */
+  /**
+   * @description Initializes the chat interface on page load.
+   */
   (async function init() {
-    // כשתחברי את ההתחברות מחדש, תחזירי את זה:
+  
     const me = await requireLogin();
     if (!me) return;
   

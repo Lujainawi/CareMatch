@@ -1,14 +1,12 @@
-/* frontend/js/signup.js
-   Works with: frontend/pages/signUp.html
-
-   Flow:
-   1) Validate fields (full_name, email, password, confirm_password)
-   2) POST /api/auth/signup  -> expects { ok:true, verifyToken:"..." }
-   3) Open verification modal + start resend timer (60s)
-   4) POST /api/auth/email/verify  -> expects { ok:true }
-   5) POST /api/auth/email/resend  -> expects { ok:true }
-*/
-
+/**
+ * @file signup.js
+ * @description Handles the user registration process, including complex form validation,
+ * secure API communication for account creation, and email verification via OTP modal.
+ * @notes 
+ * - Uses a multi-step flow: Registration -> Token Receipt -> OTP Verification.
+ * - Implements real-time validation feedback on 'blur' and 'input' events.
+ * - Manages session-based verification tokens using sessionStorage.
+ */
 (function () {
   // ---------- DOM ----------
    // We grab references to the form inputs and error placeholders to show validation messages.
@@ -21,14 +19,14 @@
 
   const togglePassword = document.getElementById("togglePassword");
   const toggleConfirmPassword = document.getElementById("toggleConfirmPassword");
-
+  // ---------- DOM Elements : Error Messages ----------
   const fullNameError = document.getElementById("fullNameError");
   const emailError = document.getElementById("emailError");
   const passwordError = document.getElementById("passwordError");
   const confirmError = document.getElementById("confirmError");
   const formError = document.getElementById("formError");
 
-  // Modal
+  // ---------- DOM Elements : Verification Modal ----------
   const verifyModal = document.getElementById("verifyModal");
   const emailCode = document.getElementById("emailCode");
   const codeError = document.getElementById("codeError");
@@ -36,27 +34,49 @@
   const verifyBtn = document.getElementById("verifyBtn");
   const resendBtn = document.getElementById("resendBtn");
   const resendTimerEl = document.getElementById("resendTimer");
-
+   
+  //Sanity check - ensure all elements exist
   if (!form || !fullName || !email || !password || !confirmPassword) return;
 
   const closeEls = verifyModal?.querySelectorAll('[data-close="true"]') || [];
 
   // ---------- Helpers ----------
+
+  /**
+   * @description Displays or clears error messages for a specific input field.
+   * @param {HTMLElement} inputEl - The input element.
+   * @param {HTMLElement} errorEl - The error message container.
+   * @param {string} message - The message to display.
+   */
   function setFieldError(inputEl, errorEl, message) {
     if (!errorEl) return;
     errorEl.textContent = message || "";
     inputEl.classList.toggle("input--invalid", Boolean(message));
   }
 
+  /**
+   * @description Clears the general form error message.
+   */
   function clearFormError() {
     if (formError) formError.textContent = "";
   }
 
+  /**
+   * @description Sanitizes and normalizes email input.
+   * @param {string} val - Raw email string.
+   * @returns {string} Trimmed and lowercased email.
+   */
   function normalizeEmail(val) {
     return String(val || "").trim().toLowerCase();
   }
 
   // ---------- Password toggle ----------
+
+  /**
+   * @description Configures the password visibility toggle functionality.
+   * @param {HTMLElement} btn - The toggle button.
+   * @param {HTMLElement} input - The password input field.
+   */
   function setupToggle(btn, input) {
     if (!btn || !input) return;
     btn.addEventListener("click", () => {
@@ -71,7 +91,12 @@
   setupToggle(togglePassword, password);
   setupToggle(toggleConfirmPassword, confirmPassword);
 
-  // ---------- Validation ----------
+  // ---------- Validation Logic ----------
+
+  /**
+   * @description Validates that the full name contains at least two parts.
+   * @returns {boolean}
+   */
   function validateFullName() {
     const val = fullName.value.trim();
     if (!val) {
@@ -87,6 +112,10 @@
     return true;
   }
 
+  /**
+   * @description Validates the email format using the browser's native Validation API.
+   * @returns {boolean}
+   */
   function validateEmail() {
     const val = email.value.trim();
     if (!val) {
@@ -100,7 +129,10 @@
     setFieldError(email, emailError, "");
     return true;
   }
-
+  /**
+   * @description Validates password length/strength requirements
+   * @returns {boolean}
+   */
   function validatePassword() {
     const val = password.value;
     if (!val || !val.trim()) {
@@ -114,7 +146,11 @@
     setFieldError(password, passwordError, "");
     return true;
   }
-
+   
+  /**
+   * @description Validates that the confirm password matches the original password.
+   * @returns {boolean}
+   */ 
   function validateConfirmPassword() {
     const a = password.value;
     const b = confirmPassword.value;
@@ -190,7 +226,10 @@
 
   // ---------- Resend timer ----------
   let resendInterval = null;
-
+  /**
+   * @description Starts a countdown timer for the resend button.
+   * @param {number} seconds - Number of seconds for the countdown.
+   */ 
   function startResendTimer(seconds = 60) {
     if (!resendBtn || !resendTimerEl) return;
 
@@ -212,6 +251,12 @@
   }
 
   // ---------- API ----------
+  /**
+   * @description Sends user registration data to the server to create a new account.
+   * @param {Object} payload - The registration data (full_name, email, password).
+   * @returns {Promise<{ok: boolean, status: number, data: Object|null}>} The server response and parsed JSON data.
+   * @notes Uses 'credentials: include' to ensure session cookies/headers are handled if provided by the backend.
+   */
   async function apiSignup(payload) {
     const res = await fetch("/api/auth/signup", {
       method: "POST",
@@ -228,6 +273,12 @@
     return { ok: res.ok, status: res.status, data };
   }
 
+  /**
+   * @description Sends the email verification code to the server for validation.
+   * @param {Object} payload - The verification data (verifyToken, code).  
+   * @returns {Promise<{ok: boolean, status: number, data: Object|null}>} The server response and parsed JSON data.
+   * @notes Uses 'credentials: include' to ensure session cookies/headers are handled if provided by the backend.
+   */   
   async function apiVerifyEmail(payload) {
     const res = await fetch("/api/auth/email/verify", {
       method: "POST",
@@ -244,6 +295,12 @@
     return { ok: res.ok, status: res.status, data };
   }
 
+  /**
+   * @description Requests the server to resend the email verification code.
+   * @param {Object} payload - The data containing the verifyToken. 
+   * @returns {Promise<{ok: boolean, status: number, data: Object|null}>} The server response and parsed JSON data.
+   * @notes Uses 'credentials: include' to ensure session cookies/headers are handled if provided by the backend.
+   */
   async function apiResendCode(payload) {
     const res = await fetch("/api/auth/email/resend", {
       method: "POST",

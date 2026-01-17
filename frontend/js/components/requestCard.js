@@ -1,15 +1,26 @@
+/**
+ * @file requestCard.js
+ * @description Creates a request card element for displaying request information.
+ * This component is used in the results page to show individual requests.
+ */
+
 export function createRequestCard(data) {
   const li = document.createElement("li");
   li.className = "card card--request";
-
+  
+  // Ensures a placeholder image is used if the URL is missing or broken
   const fallback = new URL("../../images/placeholder.jpeg", import.meta.url).href;
 
   const img = document.createElement("img");
   img.className = "card__img";
   img.src = data.image || fallback;
   img.alt = data.imageAlt || "Request image";
+
+  
   img.loading = "lazy";
   img.decoding = "async";
+
+  // If the image fails to load (404), switch to the fallback immediately
   img.onerror = () => { img.src = fallback; };
 
   const fit = data.imageFit || "cover"; 
@@ -39,7 +50,8 @@ export function createRequestCard(data) {
   btn.className = "btn card__btn";
   btn.href = data.moreHref || "results.html";
   btn.textContent = "More details";
-
+  
+  // Assemble the card
   body.append(meta, title, tags, desc, btn);
   li.append(img, body);
   return li;

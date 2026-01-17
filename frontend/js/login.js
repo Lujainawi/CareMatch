@@ -1,23 +1,26 @@
-/* frontend/js/login.js
-  References:
-  - aria-pressed (toggle button): MDN :contentReference[oaicite:2]{index=2}
-  - Constraint Validation API: MDN :contentReference[oaicite:3]{index=3}
-  - Generic login errors to reduce enumeration: OWASP :contentReference[oaicite:4]{index=4}
-  - Error identification in text: WCAG 3.3.1 :contentReference[oaicite:5]{index=5}
-*/
+/**
+ * @file login.js
+ * @description Manages the user authentication process, including form validation, 
+ * password visibility toggling, and multi-factor authentication (MFA) logic.
+ * @notes 
+ * - Implements OWASP security principles by using generic error messages.
+ * - Follows WCAG accessibility standards for form controls and modal management.
+ * - Uses session-based tokens for secure multi-step verification flows.
+ */
 
 (function () {
-  // ---- DOM ----
+  // ---- DOM Elements: Form Fields ----
   const form = document.getElementById("loginForm");
   const email = document.getElementById("email");
   const password = document.getElementById("password");
   const toggleBtn = document.getElementById("togglePassword");
 
+  // ---- DOM Elements: Error Display Containers ----
   const emailError = document.getElementById("emailError");
   const passwordError = document.getElementById("passwordError");
   const formError = document.getElementById("formError");
 
-  // ---- Login OTP Modal DOM ----
+  // ---- DOM Elements: Multi-Factor Authentication Modal(MFA) ----
   const loginVerifyModal = document.getElementById("loginVerifyModal");
   const loginMaskedEmail = document.getElementById("loginMaskedEmail");
   const loginCode = document.getElementById("loginCode");
@@ -27,20 +30,33 @@
   const loginResendBtn = document.getElementById("loginResendBtn");
   const loginResendTimerEl = document.getElementById("loginResendTimer");
 
+  // Close buttons inside the modal
   const loginCloseEls = loginVerifyModal?.querySelectorAll('[data-close="true"]') || [];
 
+  // ---- Ensure DOM elements exist before proceeding ----
   if (!form || !email || !password || !toggleBtn) return;
 
-  // ---- Helpers ----
+  // ---- UI Helpers functions ----
+
+  /**
+   * Sets or clears error states for input fields.
+   * @param {HTMLElement} inputEl - The input element to style.
+   * @param {HTMLElement} errorEl - The container for the error message.
+   * @param {string} message - The error description (empty to clear).
+   */
   function setFieldError(inputEl, errorEl, message) {
     errorEl.textContent = message || "";
     inputEl.classList.toggle("input--invalid", Boolean(message));
   }
 
+  /**
+   * Clears the general form error message.
+   */
   function clearFormError() {
     formError.textContent = "";
   }
 
+  // ---- Login Modal (MFA) functions ----
   function openLoginModal() {
     if (!loginVerifyModal) return;
     loginVerifyModal.setAttribute("aria-hidden", "false");
@@ -60,9 +76,13 @@
     if (e.key === "Escape" && loginVerifyModal?.classList.contains("is-open")) closeLoginModal();
   });
 
-  // ---- Resend timer ----
+  // ---- MFA Resend timer ----
   let loginResendInterval = null;
-
+  
+  /**
+   * Manages the countdown for the "Resend Code" button to prevent spam.
+   * @param {number} seconds - Countdown duration in seconds.
+   */
   function startLoginResendTimer(seconds = 60) {
     if (!loginResendBtn || !loginResendTimerEl) return;
 
@@ -84,13 +104,12 @@
   }
 
 
-
-
   // ---- Show/Hide password (accessible toggle) ----
   toggleBtn.addEventListener("click", () => {
     const isShown = password.type === "text";
     password.type = isShown ? "password" : "text";
 
+    // Update button state
     toggleBtn.setAttribute("aria-pressed", String(!isShown));
     toggleBtn.textContent = isShown ? "Show" : "Hide";
 
@@ -98,6 +117,10 @@
   });
 
   // ---- Field validation ----
+
+  /**
+   * Validates Email format and requirement
+   */
   function validateEmail() {
     const val = email.value.trim();
 
@@ -111,11 +134,13 @@
       setFieldError(email, emailError, "Enter a valid email address.");
       return false;
     }
-
     setFieldError(email, emailError, "");
     return true;
   }
 
+  /**
+   * Validates password length/strength requirements
+   */
   function validatePassword() {
     const val = password.value;
 
@@ -124,8 +149,7 @@
       return false;
     }
 
-    // (Placeholder) requirement can be strengthened later.
-    // For now we keep minimum length to match UI helper text.
+    // Minimum security threshold: 8 characters
     if (val.length < 8) {
       setFieldError(password, passwordError, "Password must be at least 8 characters.");
       return false;
@@ -148,14 +172,12 @@
     clearFormError();
   });
 
-  // ---- API placeholders (we'll implement backend later) ----
+  // ---- API placeholders ----
+
+  /**
+   * Sends login request to the server.
+   */
   async function apiLogin(payload) {
-    // Expected backend:
-    // POST /api/auth/login
-    // body: { email, password }
-    // response (example):
-    // 200 { mfaRequired: true, mfaToken: "....", channels:["sms","email"], maskedEmail:"...", maskedPhone:"..." }
-    // 401/400 => invalid
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -172,7 +194,7 @@
     return { ok: res.ok, status: res.status, data };
   }
 
-
+  // Verifies the MFA code
   async function apiMfaVerify(payload) {
     const res = await fetch("/api/auth/mfa/verify", {
       method: "POST",
@@ -186,6 +208,7 @@
     return { ok: res.ok, status: res.status, data };
   }
 
+  // Requests a new MFA code to be sent
   async function apiMfaResend(payload) {
     const res = await fetch("/api/auth/mfa/resend", {
       method: "POST",
@@ -202,7 +225,7 @@
 
 
 
-  // ---- Submit ----
+  // ---- Main Form Submit  ----
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     clearFormError();
@@ -225,14 +248,14 @@
         password: password.value,
       });
 
-
+      // Specific case: email not verified
       if (status === 403 && data?.code === "EMAIL_NOT_VERIFIED") {
         formError.textContent = "Please verify your email before logging in.";
         return;
       }
 
       if (!ok) {
-        // Generic message to avoid revealing whether email exists (OWASP)
+        // OWASP: Use generic message to prevent discovery of valid email addresses
         formError.textContent = "Invalid email or password.";
         return;
       }
@@ -244,7 +267,7 @@
           formError.textContent = "Something went wrong. Please try again.";
           return;
         }
-
+        // Store MFA token in sessionStorage for verification step
         sessionStorage.setItem("mfaToken", mfaToken);
 
         if (loginMaskedEmail) {
@@ -256,7 +279,7 @@
         return;
       }
 
-      // If server ever returns no MFA (not expected), fallback:
+      // Success: redirect to chat
       window.location.href = "../pages/chat.html";
     } catch (err) {
       // Network/Unexpected
@@ -268,6 +291,8 @@
       }
     }
   });
+
+  // ---- MFA Verify Handling ----
   loginVerifyBtn?.addEventListener("click", async () => {
     if (loginModalMsg) loginModalMsg.textContent = "";
     setFieldError(loginCode, loginCodeError, "");
@@ -277,6 +302,7 @@
       setFieldError(loginCode, loginCodeError, "Enter the verification code.");
       return;
     }
+    // Basic format check: 6 digits
     if (!/^\d{6}$/.test(code)) {
       setFieldError(loginCode, loginCodeError, "Code must be 6 digits.");
       return;
@@ -304,7 +330,7 @@
         if (loginModalMsg) loginModalMsg.textContent = msg;
         return;
       }
-
+      // Success: clear MFA token and redirect to chat
       sessionStorage.removeItem("mfaToken");
       closeLoginModal();
       window.location.href = "../pages/chat.html";
@@ -316,6 +342,8 @@
     }
   });
 
+
+  // ---- MFA Resend Code Handling ----
   loginResendBtn?.addEventListener("click", async () => {
     if (loginModalMsg) loginModalMsg.textContent = "";
 

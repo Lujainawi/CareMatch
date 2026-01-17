@@ -1,3 +1,12 @@
+/**
+ * @file index.js
+ * @description Home page logic: initializes UI components, updates stats, and runs carousels.
+ * @notes
+ * - Uses demo data (can be replaced with API/DB).
+ * - Respects prefers-reduced-motion for accessibility.
+ */
+
+// --- Section 1: Imports & Initializations ---
 import { createRequestCard } from "./components/requestCard.js";
 import { initContactForm } from "./components/contactForm.js";
 initContactForm();
@@ -9,13 +18,23 @@ document.getElementById("year").textContent = new Date().getFullYear();
 // Smooth number animation using requestAnimationFrame
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+
+/**
+ * Animate a number inside an element (or set instantly for reduced-motion users).
+ * @param {HTMLElement} el
+ * @param {number} from
+ * @param {number} to
+ * @param {(value: number) => string} formatter
+ * @param {number} [duration=700]
+ */
 function animateNumber(el, from, to, formatter, duration = 700) {
   if (reduceMotion) {
     el.textContent = formatter(to);
     return;
   }
-
   const start = performance.now();
+
+  
   function step(now) {
     const t = Math.min((now - start) / duration, 1);
     const value = from + (to - from) * t;
@@ -33,6 +52,12 @@ function animateNumber(el, from, to, formatter, duration = 700) {
     response: 2.5    // hours
   };
 
+  
+  /**
+  * Formats a duration (in hours) into a compact "xh ym" string.
+  * @param {number} hours
+  * @returns {string}
+  */
   function formatDuration(hours) {
     const totalMinutes = Math.round(hours * 60);
     const h = Math.floor(totalMinutes / 60);
@@ -53,6 +78,12 @@ function animateNumber(el, from, to, formatter, duration = 700) {
   
   function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
   
+  /**
+ * Generates the next demo value for a given stat (random-walk within safe bounds).
+ * @param {"requests"|"donors"|"success"|"response"} key
+ * @param {number} current
+ * @returns {number}
+ */
   function nextValue(key, current) {
     switch (key) {
       case "requests": return clamp(current + (Math.random() * 24 - 12), 900, 5000);
@@ -124,7 +155,7 @@ function animateNumber(el, from, to, formatter, duration = 700) {
   })();
 
 // --- Section 4: Recent Requests ---
-// 1) Demo data (replace later with DB/API)
+// 1) Demo data (we well replace this with API/DB later)
 const demoRequests = [
   {
     image: "images/the_carmel_elders.jpeg",
