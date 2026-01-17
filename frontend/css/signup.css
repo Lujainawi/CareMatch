@@ -1,3 +1,11 @@
+/*
+   CareMatch - signup.css
+   Purpose: Styles for the Signup page and the OTP verification modal (email verification step).
+   Layout:
+   - Centered auth card with simple form fields.
+   - Password field includes a "Show/Hide" toggle button inside the input.
+*/
+
 /* Page background */
 .auth-page {
     background: #f6eaea;
@@ -50,7 +58,7 @@
     margin-top: 12px;
   }
   
-  /* Fields */
+  /* --- Form fields --- */
   .field {
     text-align: left;
     margin: 14px auto;
@@ -80,6 +88,7 @@
     box-shadow: 0 0 0 3px rgba(63, 54, 71, 0.15);
   }
   
+  /* Validation state used by JS when input is invalid */
   .input--invalid {
     border-color: #c0392b;
     box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.12);
@@ -95,6 +104,8 @@
     margin: 6px 0 0;
     font-size: 12px;
     color: #c0392b;
+
+    /* Prevents layout jump when an error message appears/disappears */
     min-height: 16px;
   }
   
@@ -107,11 +118,12 @@
     text-align: center;
   }
   
-  /* Password toggle (soft text button) */
+ /* --- Password toggle (soft text button) --- */
   .password-wrap {
     position: relative;
   }
   
+   /* Make room for the Show/Hide button so text doesn't go under it */
   .password-wrap .input {
     padding-right: 70px;
   }
@@ -148,7 +160,7 @@
     border-radius: 6px;
   }
   
-  /* Main button */
+   /* --- Main button --- */
   .btn-primary {
     width: min(360px, 100%);
     padding: 14px 16px;
@@ -168,7 +180,12 @@
     box-shadow: 0 0 0 3px rgba(63, 54, 71, 0.18);
   }
   
-  /* ===== Modal ===== */
+  /* 
+     Modal (Signup OTP Verification)
+     Purpose:
+     - After signup, we show a modal where the user enters a 6-digit code.
+     - The code is sent to the user's email and expires after a short time.
+   */
   .modal[aria-hidden="true"] {
     display: none;
   }

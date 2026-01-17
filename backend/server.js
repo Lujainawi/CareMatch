@@ -1,4 +1,18 @@
-// backend/server.js
+/**
+ * @file server.js
+ * @description The main entry point of the CareMatch backend.
+ * This file sets up the Express server, handles API routing, security, authentication, and file uploads.
+ * @notes
+ * - Security: Implements Bcrypt for password hashing and Rate Limiting to prevent brute-force attacks.
+ * - Authentication: Uses session-based auth and Multi-Factor Authentication (MFA) via email.
+ * - Database: Connects to MySQL to manage users and help requests.
+ * - Storage: Handles local image uploads using Multer.
+ *
+ * Extra notes for reviewers:
+ * - Environment variables are loaded from .env during local development (dotenv).
+ * - The default session store (MemoryStore) is OK for development, but not recommended for production.
+ */
+
 const express = require('express');
 const path = require('path');
 const db = require('./db');
@@ -9,22 +23,29 @@ const rateLimit = require('express-rate-limit');
 const multer = require("multer");
 const fs = require("fs");
 
+// Load environment variables
+require("dotenv").config();
 
 const { sendVerificationEmail, sendPasswordResetEmail } = require('./mailer');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware to parse JSON bodies from incoming requests
+// --- MIDDLEWARE CONFIGURATION ---
+
+// JSON Body Parser: Limits payload size to 200kb for security
 app.use(express.json({ limit: "200kb" }));
 app.use(express.urlencoded({ extended: true }));
 
+// RATE LIMITER: Protects authentication routes from brute-force/spamming
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // limit each IP to 20 requests per windowMs
+  max: 20, // max 20 requests per IP
   standardHeaders: true,
   legacyHeaders: false,
 });
+app.use('/api/auth', authLimiter);
 
+// STRICT LIMITER: Used for sensitive operations like password resets
 const resetLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 8,
@@ -32,30 +53,28 @@ const resetLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-
-app.use('/api/auth', authLimiter);
-
-//Session middleware (cookie based sessions)
+// SESSION MANAGEMENT: Configures how the server remembers logged-in users
 app.use(session({
   name: 'carematch.sid',
   secret: process.env.SESSION_SECRET || 'dev_secret_change_me',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    httpOnly: true,
+    httpOnly: true,  // Prevents client-side JS from reading the cookie (Security)
     sameSite: 'lax',
     secure: process.env.NODE_ENV === "production",
     maxAge: 1000 * 60 * 60 * 24 * 7, //7 days
   },
 }));
 
-// Serve frontend files (HTML, CSS, JS) as static files
-app.use(express.static(path.join(__dirname, '../frontend')));
 
-// serve generated uploads
+// SERVING STATIC FILES: Connects the server to the frontend and uploads folder
+app.use(express.static(path.join(__dirname, '../frontend')));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
+// --- UTILITY FUNCTIONS ---
 
+// Reserved for future: prompts for generating preset AI images per topic.
 const PROMPTS_BY_TOPIC = {
   health: "A warm, hopeful illustration about healthcare support and community help. No text.",
   education: "A bright illustration about learning support and school supplies. No text.",
@@ -66,6 +85,38 @@ const PROMPTS_BY_TOPIC = {
   other: "A general illustration about charity and helping hands. No text.",
 };
 
+// Belong to Contact Us in Section 6
+app.post("/api/contact", (req, res) => {
+  // Later: save to DB / send email
+  console.log("Contact message:", req.body);
+  res.json({ status: "ok" });
+});
+
+// Helps keep email format consistent in the database
+function normalizeEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
+// Security tools for generating OTP codes and tokens
+function generate6DigitCode() {return String(Math.floor(100000 + Math.random() * 900000));}
+function generateVerifyToken() {return crypto.randomBytes(32).toString('hex');}
+function generateMfaToken() {return crypto.randomBytes(32).toString('hex');}
+function generateResetToken() {return crypto.randomBytes(32).toString('hex');}
+
+// Hash helper for storing reset tokens safely.
+function sha256Hex(input) {
+  return crypto.createHash('sha256').update(String(input)).digest('hex');
+}
+
+// UI helper: return a masked email.
+function maskEmail(email) {
+  const [name, domain] = String(email || '').split("@");
+  if (!domain) return '';
+  const shown = name.slice(0, 2);
+  return `${shown}***@${domain}`;
+}
+
+// ---  SYSTEM HEALTH ROUTES ---
 
 // Test route – to check if the backend is running
 app.get('/api/health', (req, res) => {
@@ -84,56 +135,10 @@ app.get('/api/test-db', async (req, res) => {
   }
 });
 
-// Belong to Contact Us in Section 6
-app.post("/api/contact", (req, res) => {
-  // Later: save to DB / send email
-  console.log("Contact message:", req.body);
-  res.json({ status: "ok" });
-});
 
-//Normalize an email for consistent storage/lookup (trim spaces + lowercase)
-function normalizeEmail(email) {
-  return String(email || "").trim().toLowerCase();
-}
+// ---  AUTHENTICATION ROUTES (Signup, Email Verify, Login, MFA) ---
 
-// Generate a random 6-digit numeric code (as a string) for email/OTP verification
-function generate6DigitCode() {
-  return String(Math.floor(100000 + Math.random() * 900000));
-}
-
-// Generate a cryptographically strong random token (64 hex chars) to identify a verification session
-function generateVerifyToken() {
-  return crypto.randomBytes(32).toString('hex');
-}
-
-function generateMfaToken() {
-  return crypto.randomBytes(32).toString('hex');
-}
-
-function generateResetToken() {
-  return crypto.randomBytes(32).toString('hex'); // 64 hex chars
-}
-
-function sha256Hex(input) {
-  return crypto.createHash('sha256').update(String(input)).digest('hex');
-}
-
-
-function maskEmail(email) {
-  const [name, domain] = String(email || '').split("@");
-  if (!domain) return '';
-  const shown = name.slice(0, 2);
-  return `${shown}***@${domain}`;
-}
-
-
-/* --------------------------
-   AUTH: SIGNUP + EMAIL VERIFY
-   Requires table: email_verifications
--------------------------- */
-
-
-// POST /api/auth/signup
+// Signup: Hashes passwords and sends a verification email
 app.post('/api/auth/signup', async (req, res) => {
   try {
     const full_name = String(req.body?.full_name || '').trim();
@@ -143,6 +148,7 @@ app.post('/api/auth/signup', async (req, res) => {
     if (!full_name || !email || !password || password.length < 8) {
       return res.status(400).json({ status: 'error', message: 'Invalid input.' });
     }
+
     // Check if email already exists
     const [existing] = await db.query('SELECT id FROM users WHERE email = ? LIMIT 1', [email]);
     if (existing.length) {
@@ -208,7 +214,6 @@ app.post('/api/auth/email/verify', async (req, res) => {
 
     if (rec.used_at) return res.status(400).json({ message: 'Invalid code.' });
 
-    // expired?
     const [expCheck] = await db.query('SELECT NOW() > ? AS expired', [rec.expires_at]);
     if (expCheck[0].expired) return res.status(400).json({ message: 'Code expired.' });
 
@@ -279,9 +284,9 @@ app.post('/api/auth/email/resend', async (req, res) => {
   }
 });
 
-/* --------------------------
-   AUTH: LOGIN + LOGOUT + ME
--------------------------- */
+
+
+/* --- AUTH: LOGIN + LOGOUT + ME --- */
 
 // POST /api/auth/login
 app.post('/api/auth/login', async (req, res) => {
@@ -336,7 +341,6 @@ app.post('/api/auth/login', async (req, res) => {
     } catch (mailErr) {
       console.error("send mail failed:", mailErr);
 
-      // חשוב: לא להשאיר challenge תקוע אם לא נשלח מייל
       await db.query("DELETE FROM mfa_challenges WHERE mfa_token = ?", [mfaToken]);
 
       return res.status(500).json({ message: "Could not send verification code. Please try again." });
@@ -355,7 +359,9 @@ app.post('/api/auth/login', async (req, res) => {
     return res.status(500).json({ message: 'Something went wrong.' });
   }
 });
-// POST /api/auth/mfa/verify  (OTP ok -> create session)
+
+
+// POST /api/auth/mfa/verify
 app.post('/api/auth/mfa/verify', async (req, res) => {
   try {
     const mfaToken = String(req.body?.mfaToken || '').trim();
@@ -462,10 +468,12 @@ app.post('/api/auth/logout', (req, res) => {
 // REQUESTS: create + list
 // --------------------------
 function requireAuth(req, res, next) {
+  // Simple middleware to protect routes that require a logged-in user (session-based)
   if (!req.session.userId) return res.status(401).json({ message: "Not authenticated." });
   next();
 }
 
+// Allowed values are validated server-side (reduces invalid data and helps security)
 const ALLOWED = {
   help_type: ["money", "volunteer", "service"],
   category: ["nursing_home", "ngo", "school", "hospital", "orphanage", "private", "other"],
@@ -475,7 +483,7 @@ const ALLOWED = {
   status: ["open", "in_progress", "closed"],
 };
 
-// POST /api/requests  (when user chooses "I need help")
+// POST /api/requests
 app.post("/api/requests", requireAuth, async (req, res) => {
   try {
     const userId = req.session.userId;
@@ -511,6 +519,7 @@ app.post("/api/requests", requireAuth, async (req, res) => {
     let amount_needed = req.body?.amount_needed;
     const is_money_request = help_type === "money" ? 1 : 0;
 
+    // Validate select inputs (only allow known values)
     if (!ALLOWED.help_type.includes(help_type)) return res.status(400).json({ message: "Invalid help_type." });
     if (!ALLOWED.category.includes(category)) return res.status(400).json({ message: "Invalid category." });
     if (!ALLOWED.target_group.includes(target_group)) return res.status(400).json({ message: "Invalid target_group." });
@@ -519,6 +528,7 @@ app.post("/api/requests", requireAuth, async (req, res) => {
     if (!title || title.length > 255) return res.status(400).json({ message: "Invalid title." });
     if (!full_description) return res.status(400).json({ message: "Invalid description." });
 
+    // Only money requests require amount_needed
     if (is_money_request) {
       const n = Number(amount_needed);
       if (!Number.isFinite(n) || n <= 0) return res.status(400).json({ message: "Invalid amount_needed." });
@@ -560,7 +570,7 @@ app.post("/api/requests", requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/requests?region=&topic=&category=&help_type=&status=&mine=1
+// GET /api/requests
 app.get("/api/requests", requireAuth, async (req, res) => {
   try {
     const { region, topic, category, help_type, status, mine } = req.query;
@@ -575,6 +585,7 @@ app.get("/api/requests", requireAuth, async (req, res) => {
     `;
     const params = [];
 
+    // "mine=1" shows only the logged-in user's requests
     if (mine === "1") {
       sql += " AND user_id = ?";
       params.push(req.session.userId);
@@ -620,6 +631,7 @@ app.post('/api/auth/password/forgot', resetLimiter, async (req, res) => {
   try {
     const email = normalizeEmail(req.body?.email);
 
+    // Always return {ok:true} to avoid revealing whether the email exists in our DB
     const genericOk = () => res.json({ ok: true });
 
     if (!email) return genericOk();
@@ -638,6 +650,7 @@ app.post('/api/auth/password/forgot', resetLimiter, async (req, res) => {
 
     if (!user.email_verified_at) return genericOk();
 
+    // Remove previous unused reset tokens for this user
     await db.query(
       `DELETE FROM password_reset_tokens
        WHERE user_id = ? AND used_at IS NULL`,
@@ -647,6 +660,7 @@ app.post('/api/auth/password/forgot', resetLimiter, async (req, res) => {
     const token = generateResetToken();
     const token_hash = sha256Hex(token);
 
+    // Store only the token hash in DB 
     await db.query(
       `INSERT INTO password_reset_tokens
        (user_id, token_hash, expires_at, attempts, used_at, created_at)
@@ -702,7 +716,6 @@ app.post('/api/auth/password/reset', resetLimiter, async (req, res) => {
 
     if (rec.attempts >= 5) return res.status(429).json({ message: 'Too many attempts. Try again later.' });
 
-    // להעלות attempts לפני כל דבר נוסף
     await db.query('UPDATE password_reset_tokens SET attempts = attempts + 1 WHERE id = ?', [rec.id]);
 
     const password_hash = await bcrypt.hash(newPassword, 10);
@@ -710,7 +723,6 @@ app.post('/api/auth/password/reset', resetLimiter, async (req, res) => {
     await db.query('UPDATE users SET password_hash = ? WHERE id = ?', [password_hash, rec.user_id]);
     await db.query('UPDATE password_reset_tokens SET used_at = NOW() WHERE id = ?', [rec.id]);
 
-    // אם המשתמש היה מחובר בדפדפן הזה — עדיף לנתק אותו (session invalidate)
     if (req.session) {
       return req.session.destroy(() => res.json({ ok: true }));
     }
@@ -722,6 +734,7 @@ app.post('/api/auth/password/reset', resetLimiter, async (req, res) => {
 });
 
 // --- Uploads (local) ---
+// Multer handles local image uploads (size/type limited for safety).
 const uploadDir = path.join(__dirname, "uploads", "user");
 fs.mkdirSync(uploadDir, { recursive: true });
 

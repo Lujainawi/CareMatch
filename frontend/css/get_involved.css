@@ -1,5 +1,9 @@
-/* --- Section 1: Categories --- */
+/* 
+   CareMatch - get_involved.css
+   Purpose: Page-specific styles for "Get Involved" (categories section + partner organizations grid).
+ */
 
+/* --- Section 1: Categories --- */
 .gi-categories{
     padding: 48px 0 56px; 
     border-top: 1px solid var(--border);
@@ -17,6 +21,8 @@
   
   .gi-grid{
     display: grid;
+
+    /* Responsive grid that adapts automatically to screen width */
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 22px;
     align-items: start;
@@ -29,6 +35,8 @@
   
   .gi-img{
     width: 100%;
+
+    /* Keeps image blocks consistent even if images have different sizes */
     aspect-ratio: 4 / 3;
     object-fit: cover;
     display: block;
@@ -56,7 +64,7 @@
   }
 
 
-  /* --- Section 2: Organization logos --- */
+/* --- Section 2: Organization logos --- */
   .gi-orgs{
     padding: 56px 0 80px;
     border-top: 1px solid var(--border);
@@ -95,6 +103,8 @@
     border: 1px solid var(--border);
     background: rgba(255,255,255,0.35);
     overflow: hidden;
+
+    /* Small hover feedback to make the grid feel interactive */
     transition: transform 180ms ease, box-shadow 180ms ease;
   }
   

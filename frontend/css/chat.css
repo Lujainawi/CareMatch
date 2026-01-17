@@ -1,11 +1,22 @@
+/*
+   CareMatch - chat.css
+   Purpose: Styles for the Chat page (Conversation mode + Quick Form mode).
+   Layout idea:
+   - The page itself does NOT scroll; the chat log scrolls inside its own container.
+   - Bottom controls (choices/tools/input) are fixed to the viewport for a "chat app" feel.
+*/
+
 /* Chat page keeps your global variables from index.css (:root colors, container, btn, etc.) */
 [hidden] { display: none !important; }
 
-/* ===== Page background ===== */
+/*
+   Page background
+   - We avoid page scrolling and keep all scrolling inside .
+*/
 .chat-body{
   min-height: 100vh;
   position: relative;
-  overflow: hidden; /* IMPORTANT: no page scroll */
+  overflow: hidden; /* no page scroll */
 }
 
 /* subtle blobs */
@@ -43,7 +54,7 @@
   color: var(--ink);
   text-decoration: none;
   letter-spacing: -0.01em;
-  line-height: 1; /* keeps it aligned with nav */
+  line-height: 1; 
 }
 
 .chat-top-actions{
@@ -134,16 +145,15 @@ select:focus-visible{
   outline: 3px solid rgba(58,50,64,0.25);
   outline-offset: 3px;
 }
-/* :focus-visible best practice */
 @supports selector(:focus-visible){
   :focus { outline: none; }
-} /* :contentReference[oaicite:1]{index=1} */
+}
 
 /* ===== Layout ===== */
 .chat-page{ height: calc(100vh - 84px); } /* header height approx */
 .chat-shell{ height: 100%; }
 
-.chat-meta{ display: none; } /* hide Step/Hint (you didn’t like it) */
+.chat-meta{ display: none; } 
 
 /* ===== Summary chips ===== */
 .chat-summary{
@@ -165,10 +175,14 @@ select:focus-visible{
   font-weight: 800;
 }
 
+/* 
+   Chat card container + scrollable log area
+   - The log scrolls; the page does not scroll.
+*/
 .chat-card{
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 84px); /* תעדכני לפי גובה ה-navbar */
+    height: calc(100vh - 84px); 
     min-height: 0;
   }
   
@@ -261,7 +275,7 @@ select:focus-visible{
   background: rgba(58,50,64,.12);
 }
 
-/* ===== Bottom controls (fixed, like Wix) ===== */
+/* ===== Bottom controls ===== */
 .choice-tools,
 .chat-choices,
 .chat-input{
@@ -346,7 +360,7 @@ select:focus-visible{
   font-weight: 900;
 }
 
-/* disabled composer (only enable when askText) */
+/* disabled composer */
 .chat-input.is-disabled {
     opacity: 0.6;
   }
