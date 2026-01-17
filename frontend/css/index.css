@@ -105,7 +105,8 @@
   }
   
   .welcome-title{
-    font-size: clamp(56px, 10vw, 160px); 
+    font-size: clamp(80px, 16vw, 270px);
+    line-height: 0.95;
     letter-spacing: -0.02em;
     margin: 0 0 10px;
     text-align: center;
@@ -401,6 +402,19 @@
   scrollbar-width: none;     /* Firefox */
   -ms-overflow-style: none;  /* old Edge/IE */
 
+}
+/* Make each card keep a fixed width so the track can scroll */
+.requests-track > li{
+  flex: 0 0 280px;
+  min-width: 280px;
+  scroll-snap-align: start;
+}
+
+@media (max-width: 520px){
+  .requests-track > li{
+    flex-basis: 240px;
+    min-width: 240px;
+  }
 }
 .requests-track::-webkit-scrollbar{
   display: none;

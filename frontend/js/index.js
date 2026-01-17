@@ -27,11 +27,12 @@ const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").match
  * @param {(value: number) => string} formatter
  * @param {number} [duration=700]
  */
-function animateNumber(el, from, to, formatter, duration = 700) {
+function animateNumber(el, from, to, formatter, duration = 450) {
   if (reduceMotion) {
     el.textContent = formatter(to);
     return;
   }
+
   const start = performance.now();
 
   
@@ -160,6 +161,7 @@ const demoRequests = [
   {
     image: "images/the_carmel_elders.jpeg",
     imageAlt: "Elderly support",
+    imageFit: "contain",
     region: "Carmel",
     nameType: "NGO",
     displayName: "Ziknei HaCarmel Center",
@@ -171,6 +173,7 @@ const demoRequests = [
   {
     image: "images/druze_children.jpeg",
     imageAlt: "Children support",
+    imageFit: "contain",
     region: "North",
     nameType: "Orphanage",
     displayName: "Horfeish Children’s Home",
@@ -180,8 +183,9 @@ const demoRequests = [
     moreHref: "results.html"
   },
   {
-    image: "images/leket.jpg",
+    image: "images/yad_sarah.jpeg",
     imageAlt: "Food packages",
+    imageFit: "contain",
     region: "Israel",
     nameType: "NGO",
     displayName: "Leket Israel",
@@ -193,6 +197,7 @@ const demoRequests = [
   {
     image: "images/latet.jpeg",
     imageAlt: "Humanitarian aid",
+    imageFit: "contain",
     region: "Israel",
     nameType: "NGO",
     displayName: "Latet",
@@ -202,8 +207,9 @@ const demoRequests = [
     moreHref: "results.html"
   },
   {
-    image: "images/hopecare-hospital.jpg",
+    image: "images/Hospitals.jpeg",
     imageAlt: "Hospital support",
+    imageFit: "contain",
     region: "Galilee",
     nameType: "Hospital",
     displayName: "HopeCare Hospital Fund",
@@ -213,8 +219,9 @@ const demoRequests = [
     moreHref: "results.html"
   },
   {
-    image: "images/tech4teens.jpg",
+    image: "images/School.jpeg",
     imageAlt: "Education support",
+    imageFit: "contain",
     region: "Haifa",
     nameType: "NGO",
     displayName: "Tech4Teens Learning Hub",
@@ -224,8 +231,9 @@ const demoRequests = [
     moreHref: "results.html"
   },
   {
-    image: "images/community-hearts.jpg",
+    image: "images/donate.jpg",
     imageAlt: "Community support",
+    imageFit: "contain",
     region: "North",
     nameType: "NGO",
     displayName: "Community Hearts Fund",
@@ -237,6 +245,7 @@ const demoRequests = [
   {
     image: "images/sos_children.jpeg",
     imageAlt: "Family support",
+    imageFit: "contain",
     region: "Acre",
     nameType: "NGO",
     displayName: "SafeHome Family Support",
