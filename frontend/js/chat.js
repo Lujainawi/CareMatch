@@ -309,22 +309,46 @@ scrollDownBtn.addEventListener("click", () => {
  * @param {string} who - The sender ('bot' or 'user').
  * @notes Automatically scrolls to bottom if the user was already at the bottom.
  */
+
+  // ---- Intro sequencing (UX) ----
+  let introRunId = 0;
+  function cancelIntroSequence() {
+    introRunId++;
+  }
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+  async function addMsgsSequential(messages, delayMs) {
+    const runId = introRunId;
+  
+    for (const m of messages) {
+      if (runId !== introRunId) return; // canceled by user action
+      addMsg(m, "bot");
+      if (delayMs > 0) await sleep(delayMs);
+    }
+  }
+
   let suppressMsgs = false;
   function addMsg(text, who = "bot") {
     if (suppressMsgs) return;
+  
+    const shouldStick = isNearBottom(chatLog);
   
     const div = document.createElement("div");
     div.className = `msg ${who}`;
     div.textContent = text;
     chatLog.appendChild(div);
   
-    const shouldStick = isNearBottom(chatLog);
     if (shouldStick) {
-      chatLog.scrollTop = chatLog.scrollHeight;
+      requestAnimationFrame(() => {
+        chatLog.scrollTop = chatLog.scrollHeight;
+        updateScrollDownButton();
+      });
+    } else {
+      updateScrollDownButton();
     }
-  
-    updateScrollDownButton();
-  }  
+  }
+   
   
   /**
  * @description Clears existing choices and renders a new set of action buttons.
@@ -631,22 +655,32 @@ scrollDownBtn.addEventListener("click", () => {
    * @description Entry point for the chatbot. Resets session and greets the user.
    * @param {string} userName - The name of the logged-in user. 
    */
-  function startFlow(userName = "there") {
+  async function startFlow(userName = "there") {
+    cancelIntroSequence(); // cancel any previous intro run
     resetAll();
   
     progressText.textContent = "Step 1";
     hintText.textContent = "";
   
-    addMsg(`Hi, ${userName}! 👋`);
-    addMsg("Welcome to CareMatch. I’ll ask a few questions to filter the best matches for you.");
-    addMsg("NOTE: please don’t share sensitive personal details here.");
-    addMsg("If you don’t have time for chat, Quick Form (top menu) lets you submit the same request quickly.");
-    addMsg("What would you like to do today?");
-
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const delayMs = reduceMotion ? 0 : 450;
+  
+    await addMsgsSequential(
+      [
+        `Hi, ${userName}! 👋`,
+        "Welcome to CareMatch. I’ll ask a few questions to filter the best matches for you.",
+        "NOTE: please don’t share sensitive personal details here.",
+        "If you don’t have time for chat, Quick Form (top menu) lets you submit the same request quickly.",
+        "What would you like to do today?",
+      ],
+      delayMs
+    );
+  
     setChoices([
       {
         label: "Donate",
         onClick: () => {
+          cancelIntroSequence();
           addMsg("Donate", "user");
           state.mode = "donor";
           donorContribute();
@@ -655,14 +689,17 @@ scrollDownBtn.addEventListener("click", () => {
       {
         label: "Request support",
         onClick: () => {
+          cancelIntroSequence();
           addMsg("Request support", "user");
           state.mode = "requester";
           requesterIntro();
         },
       },
     ]);
+  
     pushHistory(state);
   }
+  
   
   /** ---------------- DONOR ---------------- */
 
@@ -1242,9 +1279,10 @@ scrollDownBtn.addEventListener("click", () => {
    
   
   restartBtn.addEventListener("click", () => {
+    cancelIntroSequence();
     addMsg("Restart chat", "user");
     startFlow("there");
-  });
+  });  
   
   endBtn.addEventListener("click", () => {
     if (endDialog && typeof endDialog.showModal === "function") {
@@ -1270,6 +1308,8 @@ scrollDownBtn.addEventListener("click", () => {
   const qClearImg = document.getElementById("qClearImg");
   const qImgPreview = document.getElementById("qImgPreview");
   const qImgUpload = document.getElementById("qImgUpload");
+  const qUploadImg = document.getElementById("qUploadImg");
+
 
   function qSetPreview(url) {
     if (!qImgPreview) return;
@@ -1287,19 +1327,56 @@ scrollDownBtn.addEventListener("click", () => {
   }
 
   function syncQuickImageActions() {
-    const isOrg = isQuickOrg();
+    const cat = (qReqCategory?.value || "").trim();
   
-    // Org -> only default
-    qChooseDefaultImg.disabled = false;
+    if (!cat) {
+      qChooseDefaultImg.disabled = true;
+      qUploadImg && (qUploadImg.disabled = true);
+      return;
+    }
   
-    if (isOrg && qImageSource === "ai") {
+    const isPrivate = cat === "private";
+  
+    qChooseDefaultImg.disabled = isPrivate;
+    if (qUploadImg) qUploadImg.disabled = !isPrivate;
+  
+    if (isPrivate && qImageSource === "internal") {
       qImageSource = null; qImageKey = null; qImageUrl = null;
       qSetPreview(null);
     }
-  }
+    if (!isPrivate && qImageSource === "upload") {
+      qImageSource = null; qImageKey = null; qImageUrl = null;
+      qSetPreview(null);
+    }
+  }  
   qReqCategory?.addEventListener("change", syncQuickImageActions);
-  syncQuickImageActions();
+  syncQuickImageActions();  
+
+
+  qUploadImg?.addEventListener("click", () => {
+    setQuickError("");
+    if (qImgUpload) {
+      qImgUpload.value = "";
+      qImgUpload.click();
+    }
+  });
   
+  qImgUpload?.addEventListener("change", async () => {
+    const file = qImgUpload.files && qImgUpload.files[0];
+    if (!file) return;
+  
+    setQuickError("");
+  
+    try {
+      const out = await uploadImageFile(file); 
+      qImageSource = out.image_source; 
+      qImageKey = out.image_key;
+      qImageUrl = out.image_url;
+      qSetPreview(qImageUrl);
+    } catch (e) {
+      setQuickError(e.message || "Upload failed. Try again.");
+    }
+  });  
   
 
   qChooseDefaultImg?.addEventListener("click", () => {
@@ -1324,10 +1401,22 @@ scrollDownBtn.addEventListener("click", () => {
     qImageKey = null;
     qImageUrl = null;
     qSetPreview(null);
+    qImgUpload && (qImgUpload.value = "");
   })  
 
-  modeChat.addEventListener("click", () => setMode("chat"));
-  modeQuick.addEventListener("click", () => setMode("quick"));  
+  modeChat.addEventListener("click", () => {
+    cancelIntroSequence();
+    setMode("chat");
+  });
+  
+  modeQuick.addEventListener("click", () => {
+    cancelIntroSequence();
+    setMode("quick");
+    if (typeof syncQuickFormUI === "function") syncQuickFormUI();
+    if (typeof syncQuickImageActions === "function") syncQuickImageActions();
+  });
+  
+  
 
   if (quickForm) {
     quickForm.addEventListener("submit", async (e) => {
@@ -1487,6 +1576,6 @@ function openImgDialog(images, onPick, onSkip) {
   
     setMode("chat");
     setComposerEnabled(false);
-    startFlow("there");
+    await startFlow("there");
     updateScrollDownButton();
   })();  
