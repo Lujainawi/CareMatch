@@ -274,6 +274,24 @@ select:focus-visible{
   border-radius: 999px;
   background: rgba(58,50,64,.12);
 }
+.msg.user::after{
+  content: "\f007";               
+  position: absolute;
+  left: 18px;
+  top: 18px;
+  width: 26px;
+  height: 26px;
+
+  display: grid;
+  place-items: center;
+
+  font: var(--fa-font-solid);      
+  font-size: 12px;
+  color: #111;
+
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+}
 
 /* ===== Bottom controls ===== */
 .choice-tools,

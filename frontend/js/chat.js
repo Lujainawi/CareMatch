@@ -640,6 +640,7 @@ scrollDownBtn.addEventListener("click", () => {
     addMsg(`Hi, ${userName}! 👋`);
     addMsg("Welcome to CareMatch. I’ll ask a few questions to filter the best matches for you.");
     addMsg("NOTE: please don’t share sensitive personal details here.");
+    addMsg("If you don’t have time for chat, Quick Form (top menu) lets you submit the same request quickly.");
     addMsg("What would you like to do today?");
 
     setChoices([
