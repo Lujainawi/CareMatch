@@ -18,10 +18,6 @@
     <div class="container chat-header-inner">
       <div class="chat-left">
         <a class="chat-brand" href="../index.html">CareMatch</a>
-
-        <button id="backBtn" class="icon-btn" type="button" aria-label="Back" disabled>
-          <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
-        </button>
       </div>      
 
       <nav class="chat-top-actions" aria-label="Chat navigation">
@@ -49,6 +45,16 @@
       <!-- Conversation -->
       <section id="chatView" class="chat-view" aria-label="Conversation">
         <div class="chat-card">
+          <button id="backBtn"
+          class="icon-btn chat-back-inline"
+          type="button"
+          aria-label="Back one step in chat"
+          title="Back one step"
+          disabled>
+          <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+        </button>
+         
+
           <div id="chatLog" class="chat-log" aria-live="polite" aria-label="Conversation messages"></div>
 
           <button id="scrollDownBtn" class="scroll-down" type="button" aria-label="Scroll to latest" hidden>
@@ -86,11 +92,14 @@
           </div>
 
           <div id="qDonorFields" class="q-grid">
+            <div class="q-section-title span-3">Quick filters</div>
+            <p class="q-section-hint span-3">Choose options to jump straight to results.</p>
+
             <div class="q-row">
               <label for="qDonationType">Donation type</label>
               <select id="qDonationType">
                 <option value="money">Donate money</option>
-                <option value="volunteer">Volunteer (in person)</option>
+                <option value="volunteer">Volunteer in person</option>
               </select>
             </div>
 
@@ -134,8 +143,16 @@
           </div>
 
           <div id="qRequesterFields" class="q-grid" hidden>
+            <div class="q-section-title span-3">Basics</div>
+            <p class="q-section-hint span-3">
+              Fields marked with <span class="req" aria-hidden="true">*</span><span class="sr-only">required</span> are required.
+            </p>
+
             <div class="q-row">
-              <label for="qHelpType">Help type</label>
+              <label for="qHelpType">
+                Help type <span class="req" aria-hidden="true">*</span><span class="sr-only">required</span>
+              </label>
+              
               <select id="qHelpType">
                 <option value="">Select…</option>
                 <option value="money">Financial support</option>
@@ -145,7 +162,9 @@
             </div>
           
             <div class="q-row">
-              <label for="qReqCategory">Who provides the help?</label>
+              <label for="qReqCategory">
+                Who provides the help? <span class="req" aria-hidden="true">*</span><span class="sr-only">required</span>
+              </label>
               <select id="qReqCategory">
                 <option value="">Select…</option>
                 <option value="private">Private person</option>
@@ -159,7 +178,9 @@
             </div>
           
             <div class="q-row">
-              <label for="qTargetGroup">Which group is this for?</label>
+              <label for="qTargetGroup">
+                Which group is this for? <span class="req" aria-hidden="true">*</span><span class="sr-only">required</span>
+              </label>
               <select id="qTargetGroup">
                 <option value="">Select…</option>
                 <option value="elderly">Elderly</option>
@@ -173,7 +194,9 @@
             </div>
           
             <div class="q-row">
-              <label for="qReqRegion">Region</label>
+              <label for="qReqRegion">
+                Region <span class="req" aria-hidden="true">*</span><span class="sr-only">required</span>
+              </label>
               <select id="qReqRegion">
                 <option value="">Select…</option>
                 <option value="north">North</option>
@@ -185,7 +208,9 @@
             </div>
           
             <div class="q-row">
-              <label for="qReqTopic">Topic</label>
+              <label for="qReqTopic">
+                Topic <span class="req" aria-hidden="true">*</span><span class="sr-only">required</span>
+              </label>
               <select id="qReqTopic">
                 <option value="">Select…</option>
                 <option value="health">Health</option>
@@ -198,13 +223,18 @@
               </select>
             </div>
           
+            <div class="q-section-title span-3">Details</div>
             <div class="q-row span-3">
-              <label for="qTitle">Title</label>
+              <label for="qTitle">
+                Title <span class="req" aria-hidden="true">*</span><span class="sr-only">required</span>
+              </label>
               <input id="qTitle" type="text" maxlength="80" placeholder="Short title…" />
             </div>
           
             <div class="q-row span-3">
-              <label for="qDescription">Full description</label>
+              <label for="qDescription">
+                Full description <span class="req" aria-hidden="true">*</span><span class="sr-only">required</span>
+              </label>
               <textarea id="qDescription" rows="4" placeholder="Describe what you need…"></textarea>
             </div>
           
@@ -213,9 +243,12 @@
               <input id="qAmountNeeded" type="number" inputmode="numeric" min="1" step="1" placeholder="e.g., 500" />
             </div>
 
+            <div class="q-section-title span-3">Image</div>
+            <p class="q-section-hint span-3">
+              Organizations can choose an organization image. Private users can upload (optional).
+            </p>            
+
             <div class="q-row span-3">
-              <label>Image (optional)</label>
-            
               <div class="q-image-actions">
                 <button type="button" id="qChooseDefaultImg" class="btn btn--ghost">Choose an organization image</button>
                 <button type="button" id="qUploadImg" class="btn btn--ghost">Upload image</button>
@@ -229,8 +262,13 @@
           </div>          
 
 
-          <p id="qError" class="q-error" aria-live="polite"></p>
-          <button id="qSubmitBtn" class="btn" type="submit">Show results</button>
+          <div class="q-sticky-spacer"></div>
+          <div class="q-sticky">
+            <p id="qError" class="q-error" aria-live="polite"></p>
+            <button id="qSubmitBtn" class="btn q-primary" type="submit" disabled>
+              Show results
+            </button>
+          </div>
         </form>
       </section>
 

@@ -110,7 +110,8 @@ const AI_IMAGES_BY_TOPIC = {
   function updateBackButton() {
     if (!backBtn) return;
     backBtn.disabled = history.length <= 1;
-  }  
+  }
+   
 
   /**
  * @description Renders a grid of image options within the chat interface.
@@ -192,6 +193,87 @@ const qAmountNeeded = document.getElementById("qAmountNeeded");
 const qError = document.getElementById("qError");
 const qSubmitBtn = document.getElementById("qSubmitBtn");
 
+
+function setInvalid(el, on) {
+  if (!el) return;
+  el.classList.toggle("is-invalid", !!on);
+}
+
+function isRequester() {
+  return (qIntent?.value || "") === "requester";
+}
+
+function validateQuick({ showErrors = false } = {}) {
+  // Donor: לא חוסמים (רק משנים label)
+  if (!isRequester()) return true;
+
+  const req = [
+    qHelpType,
+    qReqCategory,
+    qTargetGroup,
+    qReqRegion,
+    qReqTopic,
+    qTitle,
+    qDescription,
+  ];
+
+  let ok = true;
+
+  for (const el of req) {
+    const v = (el?.value || "").trim();
+    const bad = !v || v.startsWith("Select");
+    if (showErrors) setInvalid(el, bad);
+    if (bad) ok = false;
+  }
+
+  // amount needed רק אם money
+  if ((qHelpType?.value || "").trim() === "money") {
+    const n = Number(qAmountNeeded?.value);
+    const bad = !Number.isFinite(n) || n <= 0;
+    if (showErrors) setInvalid(qAmountNeeded, bad);
+    if (bad) ok = false;
+  } else {
+    if (showErrors) setInvalid(qAmountNeeded, false);
+  }
+
+  return ok;
+}
+
+function syncQuickSubmitUI() {
+  // כותרת הכפתור לפי intent
+  if (!qSubmitBtn) return;
+
+  const intent = qIntent?.value || "donor";
+  if (intent === "donor") {
+    qSubmitBtn.disabled = false;
+    qSubmitBtn.textContent = (qDonationType?.value === "money") ? "Go to Donate" : "Show results";
+    return;
+  }
+
+  // requester
+  qSubmitBtn.textContent = "Submit request";
+  qSubmitBtn.disabled = !validateQuick({ showErrors: false });
+}
+
+[
+  qIntent,
+  qDonationType,
+  qHelpType,
+  qReqCategory,
+  qTargetGroup,
+  qReqRegion,
+  qReqTopic,
+  qTitle,
+  qDescription,
+  qAmountNeeded,
+].forEach((el) => {
+  if (!el) return;
+  el.addEventListener("change", syncQuickSubmitUI);
+  el.addEventListener("input", syncQuickSubmitUI);
+});
+syncQuickSubmitUI();
+
+
 /**
  * @description Displays error messages specific to the Quick Form.
  * @param {string} msg - Sets an error message in the quick form UI
@@ -215,6 +297,12 @@ function syncQuickFormUI() {
   if (qDonorFields) qDonorFields.hidden = intent !== "donor";
   if (qRequesterFields) qRequesterFields.hidden = intent !== "requester";
 
+  // clear invalid marks when switching modes
+  if (intent !== "requester") {
+    [qHelpType,qReqCategory,qTargetGroup,qReqRegion,qReqTopic,qTitle,qDescription,qAmountNeeded]
+      .forEach((el) => setInvalid(el, false));
+  }
+
   // donor submit text
   if (qSubmitBtn) {
     if (intent === "donor") {
@@ -232,6 +320,7 @@ function syncQuickFormUI() {
   }
 
   setQuickError("");
+  syncQuickSubmitUI();
 }
 
 
@@ -276,10 +365,10 @@ function updateScrollDownButton() {
   scrollDownBtn.hidden = isNearBottom(chatLog);
 }
 // Scroll event listener
-chatLog.addEventListener("scroll", updateScrollDownButton);
+chatLog?.addEventListener("scroll", updateScrollDownButton);
 
 //Smooth scroll to bottom on button click
-scrollDownBtn.addEventListener("click", () => {
+scrollDownBtn?.addEventListener("click", () => {
   chatLog.scrollTo({ top: chatLog.scrollHeight, behavior: "smooth" });
   updateScrollDownButton();
 });
@@ -376,6 +465,7 @@ scrollDownBtn.addEventListener("click", () => {
 
     updateScrollDownButton();
   }
+
   
   /** ---- Text question helper ---- */
 
@@ -1467,28 +1557,28 @@ scrollDownBtn.addEventListener("click", () => {
         image_key: qImageKey || null,
         image_url: qImageUrl || null,
       };
-  
-      if (
-        !payload.help_type ||
-        !payload.category ||
-        !payload.target_group ||
-        !payload.region ||
-        !payload.topic ||
-        !payload.title ||
-        !payload.full_description
-      ) {
+      
+      // UX validation: mark fields + scroll to first missing
+      const ok = validateQuick({ showErrors: true });
+      if (!ok) {
         setQuickError("Please fill all required fields.");
+        const firstBad = document.querySelector(".is-invalid");
+        firstBad?.scrollIntoView({ behavior: "smooth", block: "center" });
         return;
       }
+
   
       if (payload.help_type === "money") {
         const n = Number(qAmountNeeded.value);
-        if (!Number.isFinite(n) || n <= 0) {
+        const bad = !Number.isFinite(n) || n <= 0;
+        setInvalid(qAmountNeeded, bad);
+        if (bad) {
           setQuickError("Please enter a valid amount (numbers only).");
+          qAmountNeeded?.scrollIntoView({ behavior: "smooth", block: "center" });
           return;
         }
         payload.amount_needed = n;
-      }
+      }      
   
       try {
         const res = await fetch("/api/requests", {
