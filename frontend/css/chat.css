@@ -151,7 +151,14 @@ select:focus-visible{
 
 /* ===== Layout ===== */
 .chat-page{ height: calc(100vh - 84px); } /* header height approx */
-.chat-shell{ height: 100%; }
+.chat-shell{
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.chat-view{
+  height: 100%;
+}
 
 .chat-meta{ display: none; } 
 
@@ -181,6 +188,9 @@ select:focus-visible{
 */
 .chat-card{
   position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .chat-back-inline{

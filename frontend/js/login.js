@@ -280,7 +280,7 @@
       }
 
       // Success: redirect to chat
-      window.location.href = "../pages/chat.html";
+      window.location.href = "/pages/chat.html";
     } catch (err) {
       // Network/Unexpected
       formError.textContent = "Something went wrong. Please try again.";
@@ -333,7 +333,7 @@
       // Success: clear MFA token and redirect to chat
       sessionStorage.removeItem("mfaToken");
       closeLoginModal();
-      window.location.href = "../pages/chat.html";
+      window.location.href = "/pages/chat.html";
     } catch (err) {
       if (loginModalMsg) loginModalMsg.textContent = "Something went wrong. Please try again.";
     } finally {

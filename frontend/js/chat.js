@@ -17,12 +17,12 @@ async function requireLogin() {
     try {
       const res = await fetch("/api/auth/me", { credentials: "include" });
       if (!res.ok) {
-        window.location.href = "logIn.html"; 
+        window.location.href = "/pages/logIn.html"; 
         return null;
       }
       return await res.json();
     } catch (e) {
-      window.location.href = "logIn.html";
+      window.location.href = "/pages/logIn.html";
       return null;
     }
   }
@@ -521,7 +521,7 @@ scrollDownBtn?.addEventListener("click", () => {
    */
   function goToResults(paramsObj) {
     const params = new URLSearchParams(paramsObj);
-    window.location.href = `result.html?${params.toString()}`;
+    window.location.href = `/pages/result.html?${params.toString()}`;
   }
   
   /** ---- Simple state + history ---- */
@@ -693,7 +693,7 @@ scrollDownBtn?.addEventListener("click", () => {
         progressText.textContent = "Step 2";
         hintText.textContent = "";
         addMsg("You can donate securely on our Donate page.");
-        setChoices([{ label: "Go to Donate Money page", onClick: () => (window.location.href = "donate.html") }]);
+        setChoices([{ label: "Go to Donate Money page", onClick: () => (window.location.href = "/pages/donate.html") }]);
         return;
       }
   
@@ -748,6 +748,8 @@ scrollDownBtn?.addEventListener("click", () => {
   async function startFlow(userName = "there") {
     cancelIntroSequence(); // cancel any previous intro run
     resetAll();
+
+    endBtn.disabled = true;
   
     progressText.textContent = "Step 1";
     hintText.textContent = "";
@@ -765,6 +767,8 @@ scrollDownBtn?.addEventListener("click", () => {
       ],
       delayMs
     );
+
+    endBtn.disabled = false;
   
     setChoices([
       {
@@ -773,6 +777,7 @@ scrollDownBtn?.addEventListener("click", () => {
           cancelIntroSequence();
           addMsg("Donate", "user");
           state.mode = "donor";
+          endBtn.disabled = false;
           donorContribute();
         },
       },
@@ -782,6 +787,7 @@ scrollDownBtn?.addEventListener("click", () => {
           cancelIntroSequence();
           addMsg("Request support", "user");
           state.mode = "requester";
+          endBtn.disabled = false;
           requesterIntro();
         },
       },
@@ -812,7 +818,7 @@ scrollDownBtn?.addEventListener("click", () => {
           setChoices([
             {
               label: "Go to Donate Money page",
-              onClick: () => (window.location.href = "donate.html"),
+              onClick: () => (window.location.href = "/pages/donate.html"),
             },
           ]);
         },
@@ -1375,18 +1381,34 @@ scrollDownBtn?.addEventListener("click", () => {
   });  
   
   endBtn.addEventListener("click", () => {
-    if (endDialog && typeof endDialog.showModal === "function") {
-      endDialog.showModal();
-    } else {
-      goToResults({ mode: state.mode || "donor" });
+    // ✅ allow ending even before choosing a mode -> go to results with no filters
+    if (!state.mode) {
+      if (endDialog && typeof endDialog.showModal === "function") endDialog.showModal();
+      else goToResults({}); // results without mode
+      return;
     }
+    if (endDialog && typeof endDialog.showModal === "function") endDialog.showModal();
+    else goToResults({ mode: state.mode });
   });
+  
+  endConfirmBtn?.addEventListener("click", () => {
+    endDialog?.close();
+    if (!state.mode) goToResults({});
+    else goToResults({ mode: state.mode });
+  });
+  
   
   endCancelBtn?.addEventListener("click", () => endDialog?.close());
   endConfirmBtn?.addEventListener("click", () => {
+    if (!state.mode) {
+      addMsg("Please choose: Donate or Request support (so I can show the right results).", "bot");
+      return;
+    }
+  
     endDialog?.close();
-    goToResults({ mode: state.mode || "donor" });
+    goToResults({ mode: state.mode });
   });
+  
   
   
   /** Quick form toggle (UI only right now) */
@@ -1518,7 +1540,7 @@ scrollDownBtn?.addEventListener("click", () => {
       // ---- DONOR ----
       if (intent === "donor") {
         if (qDonationType.value === "money") {
-          window.location.href = "donate.html";
+          window.location.href = "/pages/donate.html";
           return;
         }
   
@@ -1660,6 +1682,8 @@ function openImgDialog(images, onPick, onSkip) {
    * @description Initializes the chat interface on page load.
    */
   (async function init() {
+    document.querySelectorAll("dialog[open]").forEach(d => { try { d.close(); } catch(e) {} });
+    document.querySelectorAll("[inert]").forEach(el => el.removeAttribute("inert"));    
   
     const me = await requireLogin();
     if (!me) return;
