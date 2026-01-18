@@ -130,3 +130,202 @@
   @media (max-width: 480px){
     .gi-orgs-grid{ grid-template-columns: 1fr; }
   }
+
+/* --- Modal (Organization details) --- */
+.gi-modal{
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+
+  /* animate open/close */
+  opacity: 1;
+  transition: opacity 180ms ease;
+}
+
+.gi-modal.hidden{
+  opacity: 0;
+  pointer-events: none; /* instead of display:none => allows smooth fade */
+}
+
+.gi-modal__overlay{
+  position: absolute;
+  inset: 0;
+
+  /* smart pink + glass feel */
+  background: radial-gradient(circle at 20% 10%,
+    rgba(255, 105, 180, .20),
+    rgba(255, 105, 180, .10) 40%,
+    rgba(0, 0, 0, .28) 100%);
+  backdrop-filter: blur(10px);
+}
+
+.gi-modal__card{
+  position: relative;
+  width: min(640px, 92vw);
+  max-height: min(82vh, 720px);
+  overflow: auto;
+
+  background: rgba(255,255,255,.94);
+  border-radius: 26px;
+  border: 1px solid rgba(255, 105, 180, .18);
+  box-shadow: 0 24px 80px rgba(0,0,0,.22);
+  padding: 22px 22px 18px;
+
+  /* hierarchy + center */
+  text-align: center;
+
+  /* card motion */
+  transform: translateY(6px) scale(.985);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.gi-modal:not(.hidden) .gi-modal__card{
+  transform: translateY(0) scale(1);
+}
+
+/* X less bold */
+.gi-modal__close{
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 105, 180, .18);
+  background: rgba(255, 105, 180, .10);
+  color: rgba(0,0,0,.70);
+  font-size: 20px;
+  cursor: pointer;
+  opacity: .75;
+  transition: opacity 160ms ease, transform 160ms ease, background 160ms ease;
+}
+
+.gi-modal__close:hover{
+  opacity: 1;
+  transform: scale(1.03);
+  background: rgba(255, 105, 180, .14);
+}
+
+/* Header stacked & centered (hierarchy) */
+.gi-modal__header{
+  display: flex;
+  flex-direction: column;   /* title first, badge under it */
+  align-items: center;
+  gap: 10px;
+  padding-top: 6px;
+}
+
+.gi-modal__title{
+  margin: 0;
+  font-size: clamp(22px, 2.2vw, 28px);
+  font-weight: 800;          /* bold title */
+  letter-spacing: -0.02em;
+  color: #201a1e;
+}
+
+.gi-modal__badge{
+  display: inline-block;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(255, 105, 180, .12);
+  border: 1px solid rgba(255, 105, 180, .18);
+  color: rgba(0,0,0,.70);
+  font-size: 13px;
+}
+
+.gi-modal__desc{
+  margin: 14px auto 14px;
+  max-width: 60ch;
+  line-height: 1.75;
+  color: rgba(0,0,0,.74);
+  font-size: 16px;
+}
+
+/* bullets as soft pink cards (clean + readable) */
+.gi-modal__list{
+  list-style: none;
+  padding: 0;
+  margin: 0 auto 18px;
+  max-width: 58ch;
+}
+
+.gi-modal__list li{
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+
+  padding: 12px 14px;
+  margin: 10px 0;
+  border-radius: 16px;
+
+  background: rgba(255, 105, 180, .07);
+  border: 1px solid rgba(255, 105, 180, .14);
+  text-align: left;
+}
+
+.gi-modal__list li::before{
+  content: "✓";
+  flex: 0 0 auto;
+  font-weight: 800;
+  color: rgba(255, 105, 180, .95);
+  line-height: 1.2;
+  margin-top: 2px;
+}
+
+/* Premium centered button */
+.gi-modal__actions{
+  display: flex;
+  justify-content: center;
+}
+
+.gi-modal__btn{
+  padding: 12px 18px;
+  border-radius: 16px;
+  text-decoration: none;
+  font-weight: 750;
+
+  cursor: pointer;
+
+  border: 1px solid rgba(255, 105, 180, .22);
+}
+.gi-modal__btn.primary{
+  background: rgba(251, 251, 251, 0.1);
+  color: rgba(255, 105, 180, .35);
+  border: 1px solid rgba(255, 105, 180, .35);
+  box-shadow: none;
+}
+
+.gi-modal__btn.primary:hover{
+  background: rgba(255, 105, 180, .20);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(0,0,0,.10);
+}
+
+.gi-modal__btn.primary:active{
+  transform: translateY(0);
+  box-shadow: 0 8px 18px rgba(0,0,0,.08);
+}
+
+.gi-modal__btn.primary:focus-visible{
+  outline: 3px solid rgba(255,105,180,.35);
+  outline-offset: 3px;
+}
+
+/* Motion safety */
+@media (prefers-reduced-motion: reduce){
+  .gi-modal,
+  .gi-modal__card,
+  .gi-modal__close,
+  .gi-modal__btn.primary{
+    transition: none !important;
+  }
+}
+
+/* Mobile comfort */
+@media (max-width: 520px){
+  .gi-modal{ padding: 12px; }
+  .gi-modal__card{ border-radius: 18px; }
+}

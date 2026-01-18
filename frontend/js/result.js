@@ -164,12 +164,25 @@ function renderTopicButtons({ initialTopic, onChange }) {
     btn.setAttribute("aria-pressed", String(t.value === initialTopic));
     btn.dataset.value = t.value;
 
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
       [...wrap.querySelectorAll("button")].forEach((b) =>
         b.setAttribute("aria-pressed", String(b.dataset.value === t.value))
       );
-      onChange(t.value);
+    
+      const next = new URLSearchParams(window.location.search);
+      next.delete("region");
+      next.delete("category");
+      next.delete("help_type");
+      next.delete("donation_type"); 
+    
+      if (!t.value) next.delete("topic");
+      else next.set("topic", t.value);
+    
+      history.replaceState({}, "", `${location.pathname}?${next.toString()}`);
+    
+      await onChange(t.value);
     });
+    
 
     wrap.appendChild(btn);
   });
@@ -203,24 +216,35 @@ function renderTopicButtons({ initialTopic, onChange }) {
       ? "Here you can see your requests and explore other open requests."
       : "Here are open requests that match your choices. If nothing fits, try another topic.";
 
-  renderTopicButtons({
-    initialTopic: activeTopic,
-    onChange: async (newTopic) => {
-      activeTopic = newTopic;
-
-      const next = new URLSearchParams(window.location.search);
-      if (activeTopic) next.set("topic", activeTopic);
-      else next.delete("topic");
-      history.replaceState({}, "", `${location.pathname}?${next.toString()}`);
-
-      await load();
-    },
-  });
+      renderTopicButtons({
+        initialTopic: activeTopic,
+        onChange: async (newTopic) => {
+          activeTopic = newTopic; 
+          await load();
+        },
+      });
+      
+      
 
   /**
    * @description Loads and displays requests based on current filters.
    */
+  function readFiltersFromUrl() {
+    const p = new URLSearchParams(window.location.search);
+    const mode = p.get("mode") || "donor";
+    const region = p.get("region") || "";
+    const category = p.get("category") || "";
+    const donationType = p.get("donation_type") || "";
+    const helpType = p.get("help_type") || donationType || "";
+    const topic = p.get("topic") || "";
+    const mine = p.get("mine") || "";
+    return { mode, region, category, helpType, topic, mine };
+  }
+  
   async function load() {
+    const { mode, region, category, helpType, topic, mine } = readFiltersFromUrl();
+    activeTopic = topic;
+  
     buildActiveFilterChips({
       mode,
       region,
@@ -228,48 +252,47 @@ function renderTopicButtons({ initialTopic, onChange }) {
       helpType,
       topic: activeTopic,
     });
-
+  
     const summaryParts = [topicLabel(activeTopic)];
     if (region) summaryParts.push(humanize(region));
     if (category) summaryParts.push(humanize(category));
     if (helpType) summaryParts.push(humanize(helpType));
     const fs = $("filterSummary");
     if (fs) fs.textContent = `Showing: ${summaryParts.join(" • ")}`;
-
+  
     const base = {};
     if (region) base.region = region;
     if (category) base.category = category;
     if (helpType) base.help_type = helpType;
     if (activeTopic) base.topic = activeTopic;
-
+  
     const myList = $("myList");
     $("mySection").hidden = true;
     myList.innerHTML = "";
-
-    if (mode === "requester" || params.get("mine") === "1") {
+  
+    if (mode === "requester" || mine === "1") {
       const myRows = await fetchRequests({ ...base, mine: "1" });
       if (myRows.length) {
         $("mySection").hidden = false;
         renderList(myList, myRows);
       }
     }
-    
-    // Main results section
+  
     const allRows = await fetchRequests({ ...base, status: "all" });
-
+  
     const allEmpty = $("allEmpty");
     const allList = $("allList");
     const countEl = $("resultsCount");
-
+  
     const hasResults = allRows.length > 0;
     allEmpty.hidden = hasResults;
     allList.hidden = !hasResults;
-
+  
     if (countEl) countEl.textContent = String(allRows.length);
-
+  
     if (hasResults) renderList(allList, allRows);
     else allList.innerHTML = "";
-  }
+  }  
 
   await load();
   // Logout button handler
