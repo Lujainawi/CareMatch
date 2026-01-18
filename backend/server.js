@@ -135,6 +135,86 @@ app.get('/api/test-db', async (req, res) => {
   }
 });
 
+// --------------------------
+// GUEST DONATIONS (one-time, demo)
+// --------------------------
+
+// POST /api/guest-donations
+app.post("/api/guest-donations", async (req, res) => {
+  try {
+    const amountRaw = req.body?.amount;
+    const payment_method = String(req.body?.payment_method || "").trim();
+
+    const donor_name = String(req.body?.donor_name || "").trim() || null;
+    const donor_email = String(req.body?.donor_email || "").trim() || null;
+    const donor_phone = String(req.body?.donor_phone || "").trim() || null;
+
+    const amount = Number(amountRaw);
+
+    // Basic validation (server-side)
+    if (!Number.isFinite(amount) || amount <= 0 || amount > 1_000_000) {
+      return res.status(400).json({ ok: false, message: "Invalid amount." });
+    }
+    if (!["card", "bit"].includes(payment_method)) {
+      return res.status(400).json({ ok: false, message: "Invalid payment method." });
+    }
+
+    // Optional email format check (simple)
+    if (donor_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(donor_email)) {
+      return res.status(400).json({ ok: false, message: "Invalid email." });
+    }
+
+    // DEMO ONLY: do not process real payments / do not store card details
+    const status = "demo_success";
+
+    const [result] = await db.query(
+      `INSERT INTO guest_donations
+        (amount, payment_method, donor_name, donor_email, donor_phone, status, created_at)
+       VALUES
+        (?, ?, ?, ?, ?, ?, NOW())`,
+      [amount, payment_method, donor_name, donor_email, donor_phone, status]
+    );
+
+    return res.status(201).json({
+      ok: true,
+      donationId: result.insertId,
+      status,
+    });
+  } catch (err) {
+    console.error("POST /api/guest-donations error:", err);
+    return res.status(500).json({ ok: false, message: "Something went wrong." });
+  }
+});
+
+// GET /api/guest-donations/stats
+app.get("/api/guest-donations/stats", async (req, res) => {
+  try {
+    const [totalsRows] = await db.query(
+      `SELECT COUNT(*) AS total_count,
+              COALESCE(SUM(amount), 0) AS total_amount
+       FROM guest_donations
+       WHERE status='demo_success'`
+    );
+
+    const [byMethodRows] = await db.query(
+      `SELECT payment_method,
+              COUNT(*) AS cnt,
+              COALESCE(SUM(amount), 0) AS sum_amount
+       FROM guest_donations
+       WHERE status='demo_success'
+       GROUP BY payment_method`
+    );
+
+    return res.json({
+      ok: true,
+      totals: totalsRows[0],
+      byMethod: byMethodRows,
+    });
+  } catch (err) {
+    console.error("GET /api/guest-donations/stats error:", err);
+    return res.status(500).json({ ok: false, message: "Something went wrong." });
+  }
+});
 
 // ---  AUTHENTICATION ROUTES (Signup, Email Verify, Login, MFA) ---
 
@@ -245,15 +325,14 @@ app.post('/api/auth/email/verify', async (req, res) => {
 
     if (!ok) return res.status(400).json({ message: 'Invalid code.' });
 
-    // חשוב: לוודא שיש לנו את הנתונים של pending
+    
     if (!rec.email || !rec.full_name || !rec.password_hash) {
       return res.status(400).json({ message: 'Invalid code.' });
     }
 
-    // אם מישהו כבר נרשם והספיק ליצור users (מקרה נדיר) – לחסום יצירה כפולה
     const [existing] = await db.query('SELECT id FROM users WHERE email = ? LIMIT 1', [rec.email]);
     if (existing.length) {
-      // מסמן used כדי שלא ינסו שוב עם אותו token
+      
       await db.query('UPDATE email_verifications SET used_at = NOW(), user_id = ? WHERE id = ?', [
         existing[0].id,
         rec.id,
@@ -825,6 +904,8 @@ app.post("/api/uploads/image", requireAuth, upload.single("image"), (req, res) =
     image_key: req.file.filename,
   });
 });
+
+
 
 
 // Start listening for incoming HTTP requests
