@@ -255,7 +255,7 @@ function renderTopicButtons({ initialTopic, onChange }) {
     }
     
     // Main results section
-    const allRows = await fetchRequests({ ...base, status: "open" });
+    const allRows = await fetchRequests({ ...base, status: "all" });
 
     const allEmpty = $("allEmpty");
     const allList = $("allList");

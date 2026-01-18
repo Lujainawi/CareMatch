@@ -1257,9 +1257,9 @@ scrollDownBtn?.addEventListener("click", () => {
       try {
         const out = await uploadImageFile(file);
   
-        state.imageSource = out.image_source; // "upload"
+        state.imageSource = (out.image_source === "upload") ? "internal" : out.image_source;
         state.imageKey = out.image_key;
-        state.imageUrl = out.image_url;       // "/uploads/user/..."
+        state.imageUrl = out.image_url;      
         
         addMsg("Image uploaded ✅", "bot");
         submitRequest();
@@ -1456,10 +1456,10 @@ scrollDownBtn?.addEventListener("click", () => {
       qImageSource = null; qImageKey = null; qImageUrl = null;
       qSetPreview(null);
     }
-    if (!isPrivate && qImageSource === "upload") {
+    if (!isPrivate && qImageSource === "internal") {
       qImageSource = null; qImageKey = null; qImageUrl = null;
       qSetPreview(null);
-    }
+    }    
   }  
   qReqCategory?.addEventListener("change", syncQuickImageActions);
   syncQuickImageActions();  

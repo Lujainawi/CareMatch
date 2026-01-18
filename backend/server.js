@@ -149,34 +149,53 @@ app.post('/api/auth/signup', async (req, res) => {
       return res.status(400).json({ status: 'error', message: 'Invalid input.' });
     }
 
-    // Check if email already exists
+    // 1) אם כבר יש משתמש קיים ב-users (כלומר כבר אומת בעבר) -> חסימה
     const [existing] = await db.query('SELECT id FROM users WHERE email = ? LIMIT 1', [email]);
     if (existing.length) {
       return res.status(400).json({ message: 'Signup failed.' });
     }
 
-    // Hash the password
-    const password_hash = await bcrypt.hash(password, 10);
-
-    // Insert the new user into the database
-    const [result] = await db.query(
-      `INSERT INTO users (full_name, email, password_hash, role, account_type, region, created_at, email_verified_at)
-       VALUES (?, ?, ?, 'user', 'person', 'north', NOW(), NULL)`,
-      [full_name, email, password_hash]
+    // 2) אם יש הרשמה בהמתנה (pending) שעדיין לא used ועוד לא פג תוקף -> נחדש קוד ונחזיר אותו verifyToken
+    const [pending] = await db.query(
+      `SELECT id, verify_token, expires_at, used_at
+       FROM email_verifications
+       WHERE email = ?
+       ORDER BY id DESC
+       LIMIT 1`,
+      [email]
     );
 
-    const userId = result.insertId;
+    if (pending.length && !pending[0].used_at) {
+      const [expCheck] = await db.query('SELECT NOW() > ? AS expired', [pending[0].expires_at]);
+      if (!expCheck[0].expired) {
+        const newCode = generate6DigitCode();
+        const newHash = await bcrypt.hash(newCode, 10);
 
-    //Create verification record
+        await db.query(
+          `UPDATE email_verifications
+           SET code_hash = ?, attempts = 0, expires_at = DATE_ADD(NOW(), INTERVAL 15 MINUTE)
+           WHERE id = ?`,
+          [newHash, pending[0].id]
+        );
+
+        await sendVerificationEmail(email, newCode);
+        return res.status(200).json({ ok: true, verifyToken: pending[0].verify_token });
+      }
+    }
+
+    // 3) ליצור pending חדש בתוך email_verifications (בלי users עדיין)
+    const password_hash = await bcrypt.hash(password, 10);
+
     const code = generate6DigitCode();
     const code_hash = await bcrypt.hash(code, 10);
     const verifyToken = generateVerifyToken();
 
-
     await db.query(
-      `INSERT INTO email_verifications (user_id, verify_token, code_hash, expires_at, attempts, used_at, created_at)
-       VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 15 MINUTE), 0, NULL, NOW())`,
-      [userId, verifyToken, code_hash]
+      `INSERT INTO email_verifications
+         (user_id, email, full_name, password_hash, verify_token, code_hash, expires_at, attempts, used_at, created_at)
+       VALUES
+         (NULL, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 15 MINUTE), 0, NULL, NOW())`,
+      [email, full_name, password_hash, verifyToken, code_hash]
     );
 
     await sendVerificationEmail(email, code);
@@ -201,7 +220,7 @@ app.post('/api/auth/email/verify', async (req, res) => {
     }
 
     const [rows] = await db.query(
-      `SELECT id, user_id, code_hash, expires_at, attempts, used_at
+      `SELECT id, user_id, email, full_name, password_hash, code_hash, expires_at, attempts, used_at
        FROM email_verifications
        WHERE verify_token = ?
        LIMIT 1`,
@@ -226,14 +245,47 @@ app.post('/api/auth/email/verify', async (req, res) => {
 
     if (!ok) return res.status(400).json({ message: 'Invalid code.' });
 
-    // mark used + verify user
-    await db.query('UPDATE email_verifications SET used_at = NOW() WHERE id = ?', [rec.id]);
-    await db.query('UPDATE users SET email_verified_at = NOW() WHERE id = ?', [rec.user_id]);
+    // חשוב: לוודא שיש לנו את הנתונים של pending
+    if (!rec.email || !rec.full_name || !rec.password_hash) {
+      return res.status(400).json({ message: 'Invalid code.' });
+    }
+
+    // אם מישהו כבר נרשם והספיק ליצור users (מקרה נדיר) – לחסום יצירה כפולה
+    const [existing] = await db.query('SELECT id FROM users WHERE email = ? LIMIT 1', [rec.email]);
+    if (existing.length) {
+      // מסמן used כדי שלא ינסו שוב עם אותו token
+      await db.query('UPDATE email_verifications SET used_at = NOW(), user_id = ? WHERE id = ?', [
+        existing[0].id,
+        rec.id,
+      ]);
+
+      req.session.regenerate((err) => {
+        if (err) return res.status(500).json({ message: 'Something went wrong.' });
+        req.session.userId = existing[0].id;
+        return res.json({ ok: true });
+      });
+      return;
+    }
+
+    // ליצור user רק עכשיו (אחרי אימות)
+    const [ins] = await db.query(
+      `INSERT INTO users (full_name, email, password_hash, role, account_type, region, created_at, email_verified_at)
+       VALUES (?, ?, ?, 'user', 'person', 'north', NOW(), NOW())`,
+      [rec.full_name, rec.email, rec.password_hash]
+    );
+
+    const newUserId = ins.insertId;
+
+    // mark used + לקשר את ה-verification למשתמש החדש
+    await db.query(
+      'UPDATE email_verifications SET used_at = NOW(), user_id = ? WHERE id = ?',
+      [newUserId, rec.id]
+    );
 
     // Create session now (so Signup+Verify goes straight to chat)
     req.session.regenerate((err) => {
       if (err) return res.status(500).json({ message: 'Something went wrong.' });
-      req.session.userId = rec.user_id;
+      req.session.userId = newUserId;
       return res.json({ ok: true });
     });
 
@@ -250,7 +302,7 @@ app.post('/api/auth/email/resend', async (req, res) => {
     if (!verifyToken) return res.status(400).json({ message: 'Invalid input.' });
 
     const [rows] = await db.query(
-      `SELECT id, user_id, used_at
+      `SELECT id, email, used_at
        FROM email_verifications
        WHERE verify_token = ?
        LIMIT 1`,
@@ -260,10 +312,8 @@ app.post('/api/auth/email/resend', async (req, res) => {
     if (!rows.length) return res.status(400).json({ message: 'Cannot resend.' });
     if (rows[0].used_at) return res.status(400).json({ message: 'Already verified.' });
 
-    const [userRows] = await db.query('SELECT email FROM users WHERE id = ? LIMIT 1', [rows[0].user_id]);
-    if (!userRows.length) return res.status(400).json({ message: 'Cannot resend.' });
-
-    const email = userRows[0].email;
+    const email = rows[0].email;
+    if (!email) return res.status(400).json({ message: 'Cannot resend.' });
 
     const newCode = generate6DigitCode();
     const newHash = await bcrypt.hash(newCode, 10);
@@ -300,12 +350,12 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const [rows] = await db.query(
-      `SELECT id, password_hash, email_verified_at
+      `SELECT id, email, password_hash, email_verified_at
        FROM users
        WHERE email = ?
        LIMIT 1`,
       [email]
-    );
+    );      
 
     if (!rows.length) {
       return res.status(401).json({ message: 'Invalid email or password.' });
@@ -503,8 +553,9 @@ app.post("/api/requests", requireAuth, async (req, res) => {
     
 
     if (image_source === "ai_preset") image_source = "ai";
+    if (image_source === "upload") image_source = "internal";
 
-    const IMAGE_SOURCES = ["internal", "cloudinary", "ai", "upload"];
+    const IMAGE_SOURCES = ["internal", "cloudinary", "ai"];
     if (image_source && !IMAGE_SOURCES.includes(image_source)) {
       return res.status(400).json({ message: "Invalid image_source." });
     }
@@ -606,13 +657,15 @@ app.get("/api/requests", requireAuth, async (req, res) => {
       sql += " AND help_type = ?";
       params.push(help_type);
     }
-    if (status && ALLOWED.status.includes(status)) {
+    if (status === "all") {
+      // no status filter (show all statuses)
+    } else if (status && ALLOWED.status.includes(status)) {
       sql += " AND status = ?";
       params.push(status);
     } else if (mine !== "1") {
-      // default only for "all requests"
+      // default only for "all requests" when no status provided
       sql += " AND status = 'open'";
-    }  
+    }    
 
     sql += " ORDER BY created_at DESC LIMIT 200";
 
@@ -768,7 +821,7 @@ app.post("/api/uploads/image", requireAuth, upload.single("image"), (req, res) =
   return res.json({
     ok: true,
     image_url,
-    image_source: "upload",
+    image_source: "internal",
     image_key: req.file.filename,
   });
 });
