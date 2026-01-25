@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CareMatch Admin</title>
 
-  <!-- Base styles (אם אתם משתמשים בהם בדפים אחרים) -->
+  <!-- Base styles -->
   <link rel="stylesheet" href="../css/index.css" />
 
   <!-- Admin styles -->
@@ -49,15 +49,64 @@
         </article>
       </div>
     </section>
-
     <section class="admin-section">
-      <h2 class="section-title">Next</h2>
-      <p class="muted">
-        Add charts (donations by month, requests by region) and tables (users, requests).
-      </p>
+        <h2 class="section-title">Charts</h2>
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3 class="chart-title">Donations by Month</h3>
+                <canvas id="donationsChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3 class="chart-title">Requests by Region</h3>
+                <canvas id="regionChart"></canvas>
+            </div>
+        </div>
     </section>
-  </main>
+    <section class="admin-section">
+  <div class="section-head">
+    <h2 class="section-title">Users</h2>
+    <p id="usersStatus" class="muted"></p>
+  </div>
 
-  <script type="module" src="../js/admin.js"></script>
+  <div class="table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Region</th>
+          <th>Requests</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="usersTbody"></tbody>
+    </table>
+  </div>
+</section>
+
+
+</main>
+<!-- Confirm modal -->
+<dialog id="confirmDialog" class="cm-dialog">
+  <form method="dialog" class="cm-dialog-inner">
+    <h3 id="confirmTitle" class="cm-dialog-title">Confirm</h3>
+    <p id="confirmText" class="cm-dialog-text">Are you sure?</p>
+
+    <div class="cm-dialog-actions">
+      <button id="confirmCancel" class="btn btn-ghost" value="cancel">Cancel</button>
+      <button id="confirmOk" class="btn btn-danger" value="ok">Delete</button>
+    </div>
+  </form>
+</dialog>
+
+
+<!-- Toast -->
+<div id="toast" class="cm-toast" hidden></div>
+
+
+ <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+ <script type="module" src="../js/admin.js"></script>
+
 </body>
 </html>

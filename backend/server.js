@@ -801,6 +801,107 @@ app.get("/api/admin/metrics", requireAdmin, async (req, res) => {
   }
 });
 
+// Admin: Users list + request_count
+app.get("/api/admin/users", requireAdmin, async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT 
+        u.id,
+        u.full_name,
+        u.email,
+        u.phone,
+        u.role,
+        u.account_type,
+        u.region,
+        u.created_at,
+        COUNT(r.id) AS request_count
+      FROM users u
+      LEFT JOIN requests r ON r.user_id = u.id
+      GROUP BY u.id, u.full_name, u.email, u.phone, u.role, u.account_type, u.region, u.created_at
+      ORDER BY u.created_at DESC
+      LIMIT 200
+    `);
+
+    res.json({ ok: true, rows });
+  } catch (e) {
+    console.error("GET /api/admin/users error:", e);
+    res.status(500).json({ ok: false, message: "Something went wrong." });
+  }
+});
+
+
+
+// GET /api/admin/charts/donations-by-month
+app.get("/api/admin/charts/donations-by-month", requireAdmin, async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT ym, SUM(total_amount) AS total
+      FROM (
+        SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, COALESCE(SUM(amount),0) AS total_amount
+        FROM guest_donations
+        WHERE status='demo_success'
+        GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+
+        UNION ALL
+
+        SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, COALESCE(SUM(amount),0) AS total_amount
+        FROM donations
+        WHERE donation_type='money'
+        GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+      ) t
+      GROUP BY ym
+      ORDER BY ym ASC
+      LIMIT 24
+    `);
+
+    res.json({ ok: true, rows });
+  } catch (e) {
+    console.error("donations-by-month error:", e);
+    res.status(500).json({ ok: false });
+  }
+});
+
+
+// GET /api/admin/charts/requests-by-region
+app.get("/api/admin/charts/requests-by-region", requireAdmin, async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT region, COUNT(*) AS cnt
+      FROM requests
+      GROUP BY region
+      ORDER BY cnt DESC
+    `);
+
+    res.json({ ok: true, rows });
+  } catch (e) {
+    console.error("requests-by-region error:", e);
+    res.status(500).json({ ok: false });
+  }
+});
+// Admin: Delete user (cascade deletes requests/donations via FK)
+app.delete("/api/admin/users/:id", requireAdmin, async (req, res) => {
+  try {
+    const targetId = Number(req.params.id);
+    if (!Number.isFinite(targetId)) {
+      return res.status(400).json({ ok: false, message: "Bad id." });
+    }
+
+    // prevent deleting yourself
+    if (req.session.user?.id === targetId) {
+      return res.status(400).json({ ok: false, message: "You can't delete your own account." });
+    }
+
+    const [[u]] = await db.query("SELECT id, role FROM users WHERE id=? LIMIT 1", [targetId]);
+    if (!u) return res.status(404).json({ ok: false, message: "User not found." });
+    if (u.role === "admin") return res.status(400).json({ ok: false, message: "Cannot delete admin." });
+
+    await db.query("DELETE FROM users WHERE id=?", [targetId]);
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error("DELETE /api/admin/users/:id error:", e);
+    res.status(500).json({ ok: false, message: "Something went wrong." });
+  }
+});
 
 // POST /api/requests/:id/contact
 app.post("/api/requests/:id/contact", requireAuth, async (req, res) => {

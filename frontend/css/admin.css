@@ -116,3 +116,92 @@
     grid-template-columns: 1fr;
   }
 }
+.charts-grid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap:16px;
+  margin-top:12px;
+}
+
+.chart-card{
+  background:#fff;
+  border-radius:14px;
+  padding:16px;
+  border:1px solid rgba(0,0,0,.08);
+}
+
+.chart-title{
+  margin:0 0 10px;
+  font-size:16px;
+}
+
+@media (max-width: 900px){
+  .charts-grid{ grid-template-columns: 1fr; }
+}
+
+/* dialog */
+.cm-dialog::backdrop { background: rgba(0,0,0,.35); }
+
+.cm-dialog {
+  border: 0;
+  border-radius: 14px;
+  padding: 0;
+  max-width: 420px;
+  width: calc(100% - 32px);
+}
+
+.cm-dialog-inner {
+  padding: 18px;
+}
+
+.cm-dialog-title { margin: 0 0 6px; font-size: 18px; }
+.cm-dialog-text { margin: 0 0 14px; opacity: .85; }
+
+.cm-dialog-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+}
+
+/* toast */
+.cm-toast{
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  background: #111;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  box-shadow: 0 10px 25px rgba(0,0,0,.25);
+  z-index: 9999;
+}
+
+.admin-table{
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.admin-table th,
+.admin-table td{
+  padding: 12px 14px;   /* ✅ הרווח העיקרי */
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(0,0,0,.08);
+  white-space: nowrap;
+}
+
+.admin-table td{
+  white-space: normal;  /* מאפשר לשם/אימייל לרדת שורה אם צריך */
+}
+
+.admin-table thead th{
+  font-weight: 600;
+  opacity: .85;
+}
+
+.table-wrap{
+  overflow-x: auto;     /* אם המסך קטן */
+}
