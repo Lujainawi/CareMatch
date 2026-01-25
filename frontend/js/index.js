@@ -156,7 +156,36 @@ function animateNumber(el, from, to, formatter, duration = 450) {
     show(0);
   })();
 
-
+  function pulseAuthLink() {
+    const auth = document.getElementById("authLink");
+    if (!auth) return;
+  
+    // scroll to top
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  
+    // restart animation even on rapid clicks
+    auth.classList.remove("auth-pulse");
+    void auth.offsetWidth; // force reflow to reset animation
+    auth.classList.add("auth-pulse");
+  
+    // focus for accessibility
+    setTimeout(() => {
+      auth.classList.remove("auth-pulse");
+      auth.focus?.();
+    }, 1400);
+  }
+  
+  // only for the homepage request cards carousel
+  const trackEl = document.getElementById("requestsTrack");
+  trackEl?.addEventListener("click", (e) => {
+    const btn = e.target.closest(".card__btn");
+    if (!btn) return;
+  
+    // prevent navigation (More details link/button)
+    e.preventDefault();
+    pulseAuthLink();
+  });
+  
 
 // --- Section 4: Recent Requests ---
 // 1) Demo data (we well replace this with API/DB later)

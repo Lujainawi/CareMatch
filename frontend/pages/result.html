@@ -139,7 +139,27 @@
               <button class="btn" type="submit">Send message</button>
             </div>            
           </form>
-        </dialog>              
+        </dialog> 
+        
+        <!-- Delete confirm dialog -->
+        <dialog id="confirmDialog" class="confirm-dialog">
+          <form method="dialog" class="confirm-form">
+            <div class="confirm-head">
+              <h3 class="confirm-title">Delete request?</h3>
+              <button class="chip-btn" value="cancel" aria-label="Close">✕</button>
+            </div>
+        
+            <p class="confirm-text">
+              Are you sure you want to delete this request? You can’t undo this.
+            </p>
+        
+            <div class="confirm-actions">
+              <button class="chip-btn" value="cancel">Cancel</button>
+              <button class="btn btn-danger" value="ok">Delete</button>
+            </div>
+          </form>
+        </dialog>
+
 
   <script type="module" src="../js/result.js"></script>
 </body>

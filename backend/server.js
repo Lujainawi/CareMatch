@@ -779,6 +779,44 @@ app.get("/api/requests", requireAuth, async (req, res) => {
   }
 });
 
+// Close (soft-delete) a request - owner only (or admin)
+app.patch("/api/requests/:id/status", requireAuth, async (req, res) => {
+  try {
+    const requestId = Number(req.params.id);
+    const nextStatus = String(req.body?.status || "").trim();
+
+    const allowed = ["open", "in_progress", "closed"];
+    if (!allowed.includes(nextStatus)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    // Load owner
+    const [rows] = await db.query(
+      "SELECT id, user_id FROM requests WHERE id = ? LIMIT 1",
+      [requestId]
+    );
+    const row = rows[0];
+    if (!row) return res.status(404).json({ message: "Request not found" });
+
+    const isOwner = Number(row.user_id) === Number(req.session.userId);
+    const isAdmin = req.session?.user?.role === "admin"; // אם אצלך נשמר role ב-session
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ message: "Not allowed" });
+    }
+
+    await db.query("UPDATE requests SET status = ? WHERE id = ?", [
+      nextStatus,
+      requestId,
+    ]);
+
+    res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 app.get("/api/admin/metrics", requireAdmin, async (req, res) => {
   try {
     const [[donUser]] = await db.query(

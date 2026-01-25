@@ -6,6 +6,25 @@
  */
 import { createRequestCard } from "./components/requestCard.js";
 
+function confirmDelete() {
+  const dlg = document.getElementById("confirmDialog");
+  if (!dlg) return Promise.resolve(window.confirm("Delete this request?"));
+
+  return new Promise((resolve) => {
+    // show modal
+    dlg.showModal();
+
+    // when dialog closes, read returnValue (from buttons value="")
+    const onClose = () => {
+      dlg.removeEventListener("close", onClose);
+      resolve(dlg.returnValue === "ok");
+    };
+
+    dlg.addEventListener("close", onClose, { once: true });
+  });
+}
+
+
 /**
  * @description Ensures the user is logged in by checking the session with the backend.
  * @returns  {Promise<Object|null>} User data or redirects to login.
@@ -87,26 +106,25 @@ function pickImageForRow(row) {
  * @param {Object} row - The request row data.
  * @returns {Object} The card data.
  */
-function rowToCardData(row) {
-  const hasRealPhoto = Boolean(row.image_url); // אם העלו תמונה
+function rowToCardData(row, opts = {}) {
+  const hasRealPhoto = Boolean(row.image_url);
   const isLogoLike = ["ngo", "hospital", "school", "nursing_home", "orphanage"].includes(row.category);
 
   return {
     id: row.id,
-  
     image: pickImageForRow(row),
     imageAlt: "Request image",
     imageFit: hasRealPhoto ? "cover" : (isLogoLike ? "contain" : "cover"),
-  
     region: humanize(row.region),
     nameType: humanize(row.category),
-    displayName: `Topic: ${humanize(row.topic)}`,
+    displayName: row.topic ? `Topic: ${humanize(row.topic)}` : "",
     field: humanize(row.target_group),
     helpType: row.title || "Request",
     shortDesc: row.short_summary || (row.full_description ? String(row.full_description).slice(0, 160) : ""),
+    canDelete: Boolean(opts.canDelete),
   };
-  
 }
+
 
 
 /**
@@ -114,10 +132,10 @@ function rowToCardData(row) {
  * @param {HTMLElement} listEl - The container element for the request cards.
  * @param {Array} rows - The list of request rows to render.
  */ 
-function renderList(listEl, rows) {
+function renderList(listEl, rows, opts = {}) {
   listEl.innerHTML = "";
   const frag = document.createDocumentFragment();
-  rows.forEach((row) => frag.appendChild(createRequestCard(rowToCardData(row))));
+  rows.forEach((row) => frag.appendChild(createRequestCard(rowToCardData(row, opts))));
   listEl.appendChild(frag);
 }
 
@@ -315,15 +333,15 @@ function renderTopicButtons({ initialTopic, onChange }) {
 
     rowsById = new Map();
 
-    const myRows = await fetchRequests({ ...base, mine: "1" });
+    const myRows = await fetchRequests({ ...base, mine: "1", status: "open" });
     myRows.forEach(r => rowsById.set(r.id, r));  
     
     $("mySection").hidden = true;
     myList.innerHTML = "";
     if (myRows.length) {
       $("mySection").hidden = false;
-      renderList(myList, myRows);
-    }    
+      renderList(myList, myRows, { canDelete: true });
+    }      
   
     const allRows = await fetchRequests({ ...base });
     allRows.forEach(r => rowsById.set(r.id, r));
@@ -339,7 +357,7 @@ function renderTopicButtons({ initialTopic, onChange }) {
   
     if (countEl) countEl.textContent = String(allRows.length);
   
-    if (hasResults) renderList(allList, allRows);
+    if (hasResults) renderList(allList, allRows, { canDelete: false });
     else allList.innerHTML = "";
   }  
 
@@ -359,6 +377,39 @@ function renderTopicButtons({ initialTopic, onChange }) {
   
   attachDetailsClick($("allList"));
   attachDetailsClick($("myList"));
+
+  function attachDeleteClick(listEl) {
+    if (!listEl) return;
+    listEl.addEventListener("click", async (e) => {
+      const btn = e.target.closest('button[data-action="delete"]');
+      if (!btn) return;
+  
+      const card = e.target.closest(".card");
+      const id = card?.dataset?.requestId;
+      if (!id) return;
+  
+      const ok = await confirmDelete();
+      if (!ok) return;
+  
+      const res = await fetch(`/api/requests/${encodeURIComponent(id)}/status`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "closed" }),
+      });
+  
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data?.message || "Failed to delete.");
+        return;
+      }
+  
+      await load();
+    });
+  }
+  
+  attachDeleteClick($("myList"));
+  
 
   form?.addEventListener("submit", async (e) => {
     e.preventDefault();

@@ -6,8 +6,8 @@
 
 export function createRequestCard(data) {
   const li = document.createElement("li");
-  li.dataset.requestId = String(data.id || "");
   li.className = "card card--request";
+  li.dataset.requestId = String(data.id || "");
   
   // Ensures a placeholder image is used if the URL is missing or broken
   const fallback = new URL("../../images/placeholder.jpeg", import.meta.url).href;
@@ -16,8 +16,6 @@ export function createRequestCard(data) {
   img.className = "card__img";
   img.src = data.image || fallback;
   img.alt = data.imageAlt || "Request image";
-
-  
   img.loading = "lazy";
   img.decoding = "async";
 
@@ -47,14 +45,29 @@ export function createRequestCard(data) {
   desc.className = "card__desc";
   desc.textContent = data.shortDesc || "";
 
+  // Actions row (More details + optional Delete)
+  const actions = document.createElement("div");
+  actions.className = "card__actions";
+
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "btn card__btn";
   btn.textContent = "More details";
   btn.dataset.action = "details";
+  actions.appendChild(btn);
+
+  // Delete only for My Requests
+  if (data.canDelete) {
+    const delBtn = document.createElement("button");
+    delBtn.type = "button";
+    delBtn.className = "chip-btn chip-btn--danger";
+    delBtn.textContent = "Delete";
+    delBtn.dataset.action = "delete";
+    actions.appendChild(delBtn);
+  }
   
   // Assemble the card
-  body.append(meta, title, tags, desc, btn);
+  body.append(meta, title, tags, desc, actions);
   li.append(img, body);
   return li;
 }
