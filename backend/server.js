@@ -26,7 +26,7 @@ const fs = require("fs");
 // Load environment variables
 require("dotenv").config();
 
-const { sendVerificationEmail, sendPasswordResetEmail } = require('./mailer');
+const { sendVerificationEmail, sendPasswordResetEmail, sendVolunteerInterestEmail } = require('./mailer');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -802,6 +802,78 @@ app.get("/api/admin/metrics", requireAdmin, async (req, res) => {
 });
 
 
+// POST /api/requests/:id/contact
+app.post("/api/requests/:id/contact", requireAuth, async (req, res) => {
+  try {
+    const requestId = Number(req.params.id);
+    if (!Number.isFinite(requestId) || requestId <= 0) {
+      return res.status(400).json({ message: "Invalid request id." });
+    }
+
+    const name = String(req.body?.name || "").trim();
+    const email = normalizeEmail(req.body?.email);
+    const phone = String(req.body?.phone || "").trim();
+    const message = String(req.body?.message || "").trim();
+
+    if (!message || message.length < 5 || message.length > 2000) {
+      return res.status(400).json({ message: "Invalid message." });
+    }
+
+    // 1) Get request
+    const [[reqRow]] = await db.query(
+      `SELECT id, user_id, title, region, category, status
+       FROM requests
+       WHERE id = ?
+       LIMIT 1`,
+      [requestId]
+    );
+    if (!reqRow) return res.status(404).json({ message: "Request not found." });
+    if (reqRow.status === "closed") {
+      return res.status(400).json({ message: "This request is closed." });
+    }
+
+    // 2) Get owner (responsible) email
+    const [[owner]] = await db.query(
+      `SELECT email, full_name
+       FROM users
+       WHERE id = ?
+       LIMIT 1`,
+      [reqRow.user_id]
+    );
+    if (!owner?.email) return res.status(500).json({ message: "Request owner email not found." });
+
+    // 3) (Optional) get donor details from DB if you want trustworthy sender info
+    const [[donor]] = await db.query(
+      `SELECT email, full_name
+       FROM users
+       WHERE id = ?
+       LIMIT 1`,
+      [req.session.userId]
+    );
+
+    const payload = {
+      requestTitle: reqRow.title,
+      requestRegion: reqRow.region,
+      requestCategory: reqRow.category,
+      donorName: name || donor?.full_name || "CareMatch user",
+      donorEmail: email || donor?.email || "",
+      donorPhone: phone || "",
+      message,
+    };
+
+    await sendVolunteerInterestEmail(owner.email, payload);
+
+    // 4) Optional: mark request as in_progress after first interest
+    if (reqRow.status === "open") {
+      await db.query(`UPDATE requests SET status='in_progress' WHERE id=?`, [requestId]);
+    }
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("POST /api/requests/:id/contact error:", err);
+    return res.status(500).json({ message: "Something went wrong." });
+  }
+});
 
 
 // POST /api/auth/password/forgot

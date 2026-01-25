@@ -92,18 +92,20 @@ function rowToCardData(row) {
   const isLogoLike = ["ngo", "hospital", "school", "nursing_home", "orphanage"].includes(row.category);
 
   return {
+    id: row.id,
+  
     image: pickImageForRow(row),
     imageAlt: "Request image",
     imageFit: hasRealPhoto ? "cover" : (isLogoLike ? "contain" : "cover"),
-
+  
     region: humanize(row.region),
     nameType: humanize(row.category),
     displayName: `Topic: ${humanize(row.topic)}`,
     field: humanize(row.target_group),
     helpType: row.title || "Request",
     shortDesc: row.short_summary || (row.full_description ? String(row.full_description).slice(0, 160) : ""),
-    moreHref: "donate.html",
   };
+  
 }
 
 
@@ -228,7 +230,48 @@ function renderTopicButtons({ initialTopic, onChange }) {
         },
       });
       
-      
+  
+  // ===== Details dialog (Modal) wiring =====
+  const dialog = document.getElementById("detailsDialog");
+  const form = document.getElementById("detailsForm");
+  const closeBtn = document.getElementById("detailsClose");
+  const statusEl = document.getElementById("detailsStatus");
+
+  // Map of requestId -> row, refreshed on every load()
+  let rowsById = new Map();
+
+  function setDialogContent(row) {
+    document.getElementById("dTitle").textContent = row.title || "Request";
+    document.getElementById("dMeta").textContent =
+      `${humanize(row.region)} • ${humanize(row.category)} • ${humanize(row.help_type || "")}`.replace(/\s•\s$/,"");
+  
+    document.getElementById("dDesc").textContent =
+      row.full_description || row.short_summary || "";
+  
+    const img = document.getElementById("dImg");
+    img.src = pickImageForRow(row);
+    img.alt = "Request image";
+  
+    document.getElementById("dRequestId").value = String(row.id);
+  
+    // optional: prefill from logged in user
+    document.getElementById("donorName").value = me?.full_name || "";
+    document.getElementById("donorEmail").value = me?.email || "";
+    document.getElementById("donorPhone").value = "";
+    document.getElementById("donorMsg").value = "";
+  
+    statusEl.textContent = "";
+  }
+
+  function openDetails(requestId) {
+    const row = rowsById.get(Number(requestId));
+    if (!row || !dialog) return;
+    setDialogContent(row);
+    dialog.showModal();
+  }
+
+  closeBtn?.addEventListener("click", () => dialog?.close());
+
 
   /**
    * @description Loads and displays requests based on current filters.
@@ -269,18 +312,22 @@ function renderTopicButtons({ initialTopic, onChange }) {
     if (activeTopic) base.topic = activeTopic;
   
     const myList = $("myList");
+
+    rowsById = new Map();
+
+    const myRows = await fetchRequests({ ...base, mine: "1" });
+    myRows.forEach(r => rowsById.set(r.id, r));  
+    
     $("mySection").hidden = true;
     myList.innerHTML = "";
+    if (myRows.length) {
+      $("mySection").hidden = false;
+      renderList(myList, myRows);
+    }    
   
-    if (mode === "requester" || mine === "1") {
-      const myRows = await fetchRequests({ ...base, mine: "1" });
-      if (myRows.length) {
-        $("mySection").hidden = false;
-        renderList(myList, myRows);
-      }
-    }
-  
-    const allRows = await fetchRequests({ ...base, status: "all" });
+    const allRows = await fetchRequests({ ...base });
+    allRows.forEach(r => rowsById.set(r.id, r));
+
   
     const allEmpty = $("allEmpty");
     const allList = $("allList");
@@ -297,6 +344,55 @@ function renderTopicButtons({ initialTopic, onChange }) {
   }  
 
   await load();
+
+  function attachDetailsClick(listEl) {
+    if (!listEl) return;
+    listEl.addEventListener("click", (e) => {
+      const btn = e.target.closest('button[data-action="details"]');
+      if (!btn) return;
+  
+      const card = e.target.closest(".card");
+      const id = card?.dataset?.requestId;
+      if (id) openDetails(id);
+    });
+  }
+  
+  attachDetailsClick($("allList"));
+  attachDetailsClick($("myList"));
+
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+  
+    const requestId = document.getElementById("dRequestId").value;
+    const name = document.getElementById("donorName").value.trim();
+    const email = document.getElementById("donorEmail").value.trim();
+    const phone = document.getElementById("donorPhone").value.trim();
+    const message = document.getElementById("donorMsg").value.trim();
+  
+    if (!message) {
+      statusEl.textContent = "Please write a message.";
+      return;
+    }
+  
+    statusEl.textContent = "Sending...";
+  
+    const res = await fetch(`/api/requests/${encodeURIComponent(requestId)}/contact`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, phone, message }),
+    });
+  
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      statusEl.textContent = data?.message || "Failed to send.";
+      return;
+    }
+  
+    statusEl.textContent = "Sent! ✅";
+  });  
+  
+
   // Logout button handler
   $("logoutBtn").addEventListener("click", async () => {
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });

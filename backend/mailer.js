@@ -84,3 +84,25 @@ async function sendPasswordResetEmail(toEmail, resetUrl) {
 }
 
 module.exports = { sendVerificationEmail, sendPasswordResetEmail };
+
+async function sendVolunteerInterestEmail(toEmail, payload) {
+  if (!toEmail || !String(toEmail).trim()) {
+    throw new Error("Missing recipient email (toEmail)");
+  }
+
+  const transporter = makeTransporter();
+  const from = process.env.MAIL_FROM || process.env.SMTP_USER;
+
+  const subject = `CareMatch: New volunteer message for "${payload.requestTitle}"`;
+
+  const text =
+    `New volunteer interest\n\n` +
+    `Request: ${payload.requestTitle}\n` +
+    `Region: ${payload.requestRegion}\n` +
+    `Category: ${payload.requestCategory}\n\n` +
+    `From: ${payload.donorName} (${payload.donorEmail})\n` +
+    (payload.donorPhone ? `Phone: ${payload.donorPhone}\n` : "") +
+    `Message:\n${payload.message}\n`;
+
+  return transporter.sendMail({ from, to: toEmail, subject, text });
+}

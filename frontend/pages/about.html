@@ -10,7 +10,7 @@
 <body>
     <header class="site-header">
         <div class="container header-inner">
-          <a class="login-link" href="login.html">Log in</a>
+          <a id="authLink" class="login-link" href="login.html">Log in</a>
     
           <nav class="main-nav" aria-label="Main navigation">
             <a class="nav-link" href="../index.html">Home</a>
@@ -116,7 +116,8 @@
         </div>
       </footer>
 
-    <script>
+      <script src="/js/components/authLink.js"></script>
+      <script>
         const y = document.getElementById("year");
         if (y) y.textContent = new Date().getFullYear();
     </script>

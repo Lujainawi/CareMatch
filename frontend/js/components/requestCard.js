@@ -6,6 +6,7 @@
 
 export function createRequestCard(data) {
   const li = document.createElement("li");
+  li.dataset.requestId = String(data.id || "");
   li.className = "card card--request";
   
   // Ensures a placeholder image is used if the URL is missing or broken
@@ -23,8 +24,8 @@ export function createRequestCard(data) {
   // If the image fails to load (404), switch to the fallback immediately
   img.onerror = () => { img.src = fallback; };
 
-  const fit = data.imageFit || "cover"; 
-  img.dataset.fit = data.imageFit || "cover";
+  const fit = data.imageFit || "contain";
+  img.dataset.fit = fit;
 
 
   const body = document.createElement("div");
@@ -46,10 +47,11 @@ export function createRequestCard(data) {
   desc.className = "card__desc";
   desc.textContent = data.shortDesc || "";
 
-  const btn = document.createElement("a");
+  const btn = document.createElement("button");
+  btn.type = "button";
   btn.className = "btn card__btn";
-  btn.href = data.moreHref || "results.html";
   btn.textContent = "More details";
+  btn.dataset.action = "details";
   
   // Assemble the card
   body.append(meta, title, tags, desc, btn);

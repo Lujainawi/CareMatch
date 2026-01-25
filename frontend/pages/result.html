@@ -97,6 +97,50 @@
           </div>
         </footer>
 
+        <dialog id="detailsDialog" class="details-dialog">
+          <form id="detailsForm" class="details-form" novalidate>
+            <div class="details-head">
+              <h3 id="dTitle" class="details-title"></h3>
+              <button id="detailsClose" class="chip-btn" type="button">Close</button>
+            </div>
+        
+            <p id="dMeta" class="details-meta"></p>
+        
+            <img id="dImg" class="details-img" src="" alt="" />
+        
+            <p id="dDesc" class="details-desc"></p>
+        
+            <input id="dRequestId" type="hidden" />
+        
+            <hr class="details-hr" />
+        
+            <h4 class="details-subtitle">Send message to volunteer</h4>
+        
+            <div class="details-grid">
+              <label class="details-label">Name
+                <input id="donorName" class="details-input" type="text" />
+              </label>
+            
+              <label class="details-label">Email
+                <input id="donorEmail" class="details-input" type="email" />
+              </label>
+            
+              <label class="details-label details-label--full">Phone (optional)
+                <input id="donorPhone" class="details-input" type="tel" />
+              </label>              
+            
+              <label class="details-label details-label--full">Message
+                <textarea id="donorMsg" class="details-textarea" rows="4" placeholder="Hi, I want to volunteer. I am available on..."></textarea>
+              </label>
+            </div>
+            
+            <div class="details-actions">
+              <p id="detailsStatus" class="details-status" aria-live="polite"></p>
+              <button class="btn" type="submit">Send message</button>
+            </div>            
+          </form>
+        </dialog>              
+
   <script type="module" src="../js/result.js"></script>
 </body>
 </html>
