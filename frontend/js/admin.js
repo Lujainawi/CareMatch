@@ -176,7 +176,10 @@ async function loadUsers() {
     const subject = encodeURIComponent("CareMatch");
 
 tbody.innerHTML = rows.map(u => {
-  const mailHref = u.email ? `mailto:${u.email}?subject=${subject}` : "#";
+  const to = encodeURIComponent(u.email || "");
+  const mailHref = u.email
+    ? `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${subject}`
+    : "#";
 
   return `
     <tr>
@@ -186,12 +189,14 @@ tbody.innerHTML = rows.map(u => {
       <td>${escapeHtml(u.region || "")}</td>
       <td>${Number(u.request_count || 0)}</td>
       <td class="actions">
-        <a class="btn btn-ghost" href="${mailHref}" ${u.email ? "" : "aria-disabled='true'"}>Contact</a>
+        <a class="btn btn-ghost" href="${mailHref}" target="_blank" rel="noopener"
+           ${u.email ? "" : "aria-disabled='true'"}>Contact</a>
         <button class="btn btn-danger" data-del="${u.id}">Delete</button>
       </td>
     </tr>
   `;
 }).join("");
+
 
 
     // bind delete buttons
