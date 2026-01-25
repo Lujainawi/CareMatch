@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CareMatch Admin</title>
+
+  <!-- Base styles (אם אתם משתמשים בהם בדפים אחרים) -->
+  <link rel="stylesheet" href="../css/index.css" />
+
+  <!-- Admin styles -->
+  <link rel="stylesheet" href="../css/admin.css" />
+</head>
+
+<body>
+  <main class="admin-wrap">
+    <header class="admin-header">
+      <div>
+        <h1 class="admin-title">Admin Dashboard</h1>
+        <p class="admin-subtitle">Internal view for CareMatch administrators.</p>
+      </div>
+
+      <div class="admin-actions">
+        <a class="btn btn-ghost" href="result.html">Back to Results</a>
+        <button id="logoutBtn" class="btn btn-primary" type="button">Logout</button>
+      </div>
+    </header>
+
+    <section class="admin-section">
+      <div class="section-head">
+        <h2 class="section-title">KPIs</h2>
+        <p id="adminStatus" class="muted"></p>
+      </div>
+
+      <div class="kpi-grid">
+        <article class="kpi-card">
+          <p class="kpi-title">Total Donations (₪)</p>
+          <p id="kpiTotalDonations" class="kpi-value">—</p>
+        </article>
+
+        <article class="kpi-card">
+          <p class="kpi-title">Total Requests</p>
+          <p id="kpiTotalRequests" class="kpi-value">—</p>
+        </article>
+
+        <article class="kpi-card">
+          <p class="kpi-title">Organizations</p>
+          <p id="kpiTotalOrganizations" class="kpi-value">—</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="admin-section">
+      <h2 class="section-title">Next</h2>
+      <p class="muted">
+        Add charts (donations by month, requests by region) and tables (users, requests).
+      </p>
+    </section>
+  </main>
+
+  <script type="module" src="../js/admin.js"></script>
+</body>
+</html>

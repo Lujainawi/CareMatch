@@ -278,6 +278,8 @@ app.post('/api/auth/signup', async (req, res) => {
       [email, full_name, password_hash, verifyToken, code_hash]
     );
 
+
+
     await sendVerificationEmail(email, code);
 
     return res.status(201).json({ ok: true, verifyToken });
@@ -337,13 +339,18 @@ app.post('/api/auth/email/verify', async (req, res) => {
         existing[0].id,
         rec.id,
       ]);
-
-      req.session.regenerate((err) => {
+      req.session.regenerate(async (err) => {
         if (err) return res.status(500).json({ message: 'Something went wrong.' });
-        req.session.userId = existing[0].id;
-        return res.json({ ok: true });
-      });
-      return;
+        const userId = existing[0].id;
+        const [[u]] = await db.query(
+          "SELECT id, email, role FROM users WHERE id=? LIMIT 1",
+          [userId]
+        );
+        req.session.userId = u.id;                 // לשמור תאימות לקוד הקיים (requireAuth)
+        req.session.user = { id: u.id, email: u.email, role: u.role }; // ✅ זה מה שצריך
+         return res.json({ ok: true });
+        });
+        return;
     }
 
     // ליצור user רק עכשיו (אחרי אימות)
@@ -365,8 +372,9 @@ app.post('/api/auth/email/verify', async (req, res) => {
     req.session.regenerate((err) => {
       if (err) return res.status(500).json({ message: 'Something went wrong.' });
       req.session.userId = newUserId;
-      return res.json({ ok: true });
-    });
+      req.session.user = { id: newUserId, email: rec.email, role: "user" }; // ✅ כי יצרתם 'user'
+    return res.json({ ok: true });
+  });
 
   } catch (err) {
     console.error('verify error:', err);
@@ -527,11 +535,17 @@ app.post('/api/auth/mfa/verify', async (req, res) => {
     await db.query('UPDATE mfa_challenges SET used_at = NOW() WHERE id = ?', [rec.id]);
 
     // Create session only now
-    req.session.regenerate((err) => {
-      if (err) return res.status(500).json({ message: 'Something went wrong.' });
-      req.session.userId = rec.user_id;
-      return res.json({ ok: true });
-    });
+   req.session.regenerate(async (err) => {
+    if (err) return res.status(500).json({ message: 'Something went wrong.' });
+    const [[u]] = await db.query(
+      "SELECT id, email, role FROM users WHERE id=? LIMIT 1",
+      [rec.user_id]
+    );
+
+   req.session.userId = u.id;
+   req.session.user = { id: u.id, email: u.email, role: u.role }; // ✅ כאן נקבע role סופי
+  return res.json({ ok: true });
+});
   } catch (err) {
     console.error('mfa verify error:', err);
     return res.status(500).json({ message: 'Something went wrong.' });
@@ -582,9 +596,11 @@ app.post('/api/auth/mfa/resend', async (req, res) => {
 
 // GET /api/auth/me
 app.get('/api/auth/me', (req, res) => {
-  if (!req.session.userId) return res.status(401).json({ ok: false });
-  return res.json({ ok: true, userId: req.session.userId });
+  if (!req.session?.user) return res.status(401).json({ ok: false });
+  return res.json({ ok: true, ...req.session.user }); 
+  // מחזיר: { ok: true, id, email, role }
 });
+
 
 // POST /api/auth/logout
 app.post('/api/auth/logout', (req, res) => {
@@ -601,6 +617,13 @@ function requireAuth(req, res, next) {
   if (!req.session.userId) return res.status(401).json({ message: "Not authenticated." });
   next();
 }
+// Admin-only middleware
+function requireAdmin(req, res, next) {
+  if (!req.session?.user) return res.status(401).json({ error: "Not logged in" });
+  if (req.session.user.role !== "admin") return res.status(403).json({ error: "Admins only" });
+  next();
+}
+
 
 // Allowed values are validated server-side (reduces invalid data and helps security)
 const ALLOWED = {
@@ -755,6 +778,29 @@ app.get("/api/requests", requireAuth, async (req, res) => {
     return res.status(500).json({ message: "Something went wrong." });
   }
 });
+
+app.get("/api/admin/metrics", requireAdmin, async (req, res) => {
+  try {
+    const [[donUser]] = await db.query(
+      "SELECT COALESCE(SUM(amount),0) AS total FROM donations WHERE donation_type='money'"
+    );
+    const [[donGuest]] = await db.query(
+      "SELECT COALESCE(SUM(amount),0) AS total FROM guest_donations WHERE status='demo_success'"
+    );
+    const [[reqCount]] = await db.query("SELECT COUNT(*) AS total FROM requests");
+
+    res.json({
+      ok: true,
+      totalDonations: Number(donUser.total) + Number(donGuest.total),
+      totalRequests: Number(reqCount.total),
+      totalOrganizations: 14
+    });
+  } catch (e) {
+    console.error("GET /api/admin/metrics error:", e);
+    res.status(500).json({ ok: false, message: "Something went wrong." });
+  }
+});
+
 
 
 

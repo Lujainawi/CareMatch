@@ -193,7 +193,11 @@ function renderTopicButtons({ initialTopic, onChange }) {
  * setting up filters, and loading request data.
  */
 (async function init() {
-  await requireLogin();
+  const me = await requireLogin();
+  if (!me) return;
+  
+  const adminLink = $("adminLink");
+  if (adminLink && me.role === "admin") adminLink.hidden = false;
 
   // footer year
   const y = new Date().getFullYear();
