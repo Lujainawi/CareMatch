@@ -8,6 +8,17 @@
  * - Uses session-based tokens for secure multi-step verification flows.
  */
 
+(async () => {
+  try {
+    const res = await fetch("/api/auth/me", { credentials: "include" });
+    if (res.ok) {
+      window.location.href = "result.html";
+      return;
+    }
+  } catch {}
+})();
+
+
 (function () {
   // ---- DOM Elements: Form Fields ----
   const form = document.getElementById("loginForm");

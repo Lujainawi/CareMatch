@@ -246,11 +246,9 @@ function renderTopicButtons({ initialTopic, onChange }) {
     activeTopic = topic;
   
     buildActiveFilterChips({
-      mode,
       region,
       category,
       helpType,
-      topic: activeTopic,
     });
   
     const summaryParts = [topicLabel(activeTopic)];
@@ -298,6 +296,6 @@ function renderTopicButtons({ initialTopic, onChange }) {
   // Logout button handler
   $("logoutBtn").addEventListener("click", async () => {
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-    window.location.href = "logIn.html";
+    window.location.href = "/index.html";
   });
 })();
