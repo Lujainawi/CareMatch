@@ -105,25 +105,33 @@
   }
   
   .welcome-title{
-    font-size: clamp(80px, 16vw, 270px);
-    line-height: 0.95;
+    font-family: "Playfair Display", serif;
+    font-weight: 800;
+    font-size: clamp(80px, 20vw, 120px);
+    line-height: 1.05;
     letter-spacing: -0.02em;
-    margin: 0 0 10px;
+  
+    color: #1f1b24;
+    text-shadow: 0 10px 22px rgba(0,0,0,0.08);
+  
+    margin: 0 0 14px;
     text-align: center;
   }
   .welcome-title--fullbleed{
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
-  padding-inline: 24px;   
-   
-}
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    padding-inline: 24px;
+  }
   
   .welcome-desc{
-    margin: 0;
-    max-width: 540px;
-    color: var(--muted);
-    line-height: 1.5;
+    max-width: 60ch;             
+    margin: 0 0 18px;           
+    color: rgba(31, 27, 36, 0.82); 
+    line-height: 1.6;
+  
+    font-style: italic;           
+    font-size: 1rem;
   }
   
   .btn{
