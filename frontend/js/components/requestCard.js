@@ -45,16 +45,38 @@ export function createRequestCard(data) {
   desc.className = "card__desc";
   desc.textContent = data.shortDesc || "";
 
-  // Actions row (More details + optional Delete)
+  // Actions row
   const actions = document.createElement("div");
   actions.className = "card__actions";
 
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "btn card__btn";
-  btn.textContent = "More details";
-  btn.dataset.action = "details";
-  actions.appendChild(btn);
+  // Status badge (Open / Pending / Closed) – show first
+  if (data.status) {
+    const st = document.createElement("span");
+    st.className = "status-badge";
+  
+    if (data.status === "in_progress") {
+      st.textContent = "Pending";
+      st.classList.add("status-badge--pending");
+    } else if (data.status === "closed") {
+      st.textContent = "Closed";
+      st.classList.add("status-badge--closed");
+    } else {
+      st.textContent = "Open";
+      st.classList.add("status-badge--open");
+    }
+  
+    actions.prepend(st);
+  }
+
+  // More details – only for NOT mine (Results page)
+  if (!data.isMine) {
+    const detailsBtn = document.createElement("button");
+    detailsBtn.type = "button";
+    detailsBtn.className = "btn card__btn";
+    detailsBtn.textContent = "More details";
+    detailsBtn.dataset.action = "details";
+    actions.appendChild(detailsBtn);
+  }
 
   // Delete only for My Requests
   if (data.canDelete) {
@@ -65,7 +87,7 @@ export function createRequestCard(data) {
     delBtn.dataset.action = "delete";
     actions.appendChild(delBtn);
   }
-  
+
   // Accept/Reject only for owner when pending
   if (data.canManage && data.status === "in_progress") {
     const acceptBtn = document.createElement("button");

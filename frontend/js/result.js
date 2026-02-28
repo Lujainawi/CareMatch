@@ -122,6 +122,7 @@ function rowToCardData(row, opts = {}) {
     helpType: row.title || "Request",
     shortDesc: row.short_summary || (row.full_description ? String(row.full_description).slice(0, 160) : ""),
     canDelete: Boolean(opts.canDelete),
+    isMine: false,
   };
 }
 
@@ -237,7 +238,7 @@ function renderTopicButtons({ initialTopic, onChange }) {
 
   $("resultsSub").textContent =
     mode === "requester"
-      ? "Here you can see your requests and explore other open requests."
+      ? "Explore requests from others that you can help with."
       : "Here are open requests that match your choices. If nothing fits, try another topic.";
 
       renderTopicButtons({
@@ -307,14 +308,10 @@ function renderTopicButtons({ initialTopic, onChange }) {
   }
   
   async function load() {
-    const { mode, region, category, helpType, topic, mine } = readFiltersFromUrl();
+    const { mode, region, category, helpType, topic } = readFiltersFromUrl();
     activeTopic = topic;
   
-    buildActiveFilterChips({
-      region,
-      category,
-      helpType,
-    });
+    buildActiveFilterChips({ region, category, helpType });
   
     const summaryParts = [topicLabel(activeTopic)];
     if (region) summaryParts.push(humanize(region));
@@ -329,23 +326,20 @@ function renderTopicButtons({ initialTopic, onChange }) {
     if (helpType) base.help_type = helpType;
     if (activeTopic) base.topic = activeTopic;
   
+    const mySection = $("mySection");
     const myList = $("myList");
-
-    rowsById = new Map();
-
-    const myRows = await fetchRequests({ ...base, mine: "1", status: "all" });
-    myRows.forEach(r => rowsById.set(r.id, r));  
-    
-    $("mySection").hidden = true;
-    myList.innerHTML = "";
-    if (myRows.length) {
-      $("mySection").hidden = false;
-      renderList(myList, myRows, { canDelete: true, canManage: true });
-    }      
+    if (mySection) mySection.hidden = true;
+    if (myList) myList.innerHTML = "";
   
-    const allRows = await fetchRequests({ ...base });
+    rowsById = new Map();
+  
+    let allRows = await fetchRequests({ ...base });
+  
+    if (typeof me !== "undefined" && me?.id != null) {
+      allRows = allRows.filter(r => Number(r.user_id) !== Number(me.id));
+    }
+  
     allRows.forEach(r => rowsById.set(r.id, r));
-
   
     const allEmpty = $("allEmpty");
     const allList = $("allList");
@@ -359,8 +353,7 @@ function renderTopicButtons({ initialTopic, onChange }) {
   
     if (hasResults) renderList(allList, allRows, { canDelete: false });
     else allList.innerHTML = "";
-  }  
-
+  }
   await load();
 
   function attachDetailsClick(listEl) {
@@ -376,7 +369,6 @@ function renderTopicButtons({ initialTopic, onChange }) {
   }
   
   attachDetailsClick($("allList"));
-  attachDetailsClick($("myList"));
 
   function attachDeleteClick(listEl) {
     if (!listEl) return;
@@ -407,7 +399,6 @@ function renderTopicButtons({ initialTopic, onChange }) {
       await load();
     });
   }
-  attachDeleteClick($("myList"));
 
   function attachManageClick(listEl) {
     if (!listEl) return;
@@ -435,7 +426,6 @@ function renderTopicButtons({ initialTopic, onChange }) {
       await load(); // refresh lists
     });
   }
-  attachManageClick($("myList"));
   
 
   form?.addEventListener("submit", async (e) => {

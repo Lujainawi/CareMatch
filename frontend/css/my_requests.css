@@ -1,0 +1,122 @@
+/* Page spacing */
+.results-page { padding-bottom: 48px; }
+.results-head { margin-bottom: 14px; }
+
+/* Filter row */
+.filters-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 14px;
+}
+.filters-row label { font-weight: 600; }
+#statusFilter {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,.12);
+  background: #fff;
+}
+
+/* Grid */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Card */
+.card--request {
+  border-radius: 36px;
+  overflow: hidden;
+  border: 1px solid rgba(0,0,0,.08);
+  background: rgba(255,255,255,.7);
+  box-shadow: 0 10px 24px rgba(0,0,0,.06);
+  height: auto !important;
+  max-height: none !important;
+}
+
+/* Image */
+.card__img {
+  width: 100%;
+  height: 180px;
+  background: #fff;
+  object-fit: contain;
+  border-bottom: 1px solid rgba(0,0,0,.06);
+}
+
+/* Body: make space for actions */
+.card__body {
+  padding: 14px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 260px;
+  height: auto !important;
+  min-height: 0 !important;  
+}
+
+.card__meta { opacity: .75; font-size: 13px; margin: 0 0 6px; }
+.card__title { font-size: 18px; margin: 0 0 6px; }
+.card__tags { opacity: .82; font-size: 13px; margin: 0 0 8px; }
+
+.card__desc {
+  margin: 0;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Actions */
+.card__actions {
+  margin-top: auto;
+  padding-top: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.card__actions .btn,
+.card__actions .chip-btn {
+  width: 100%;
+  border-radius: 14px;
+}
+
+/* Status badge */
+.status-badge {
+  grid-column: 1 / -1;
+  justify-self: start;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 12px;
+  border: 1px solid rgba(0,0,0,.12);
+  background: rgba(255,255,255,.95);
+}
+
+.status-badge--open {
+  color: #176b3a;
+  border-color: rgba(23,107,58,.25);
+  background: rgba(23,107,58,.08);
+}
+.status-badge--pending {
+  color: #7a4b00;
+  border-color: rgba(122,75,0,.25);
+  background: rgba(122,75,0,.10);
+}
+.status-badge--closed {
+  color: #444;
+  border-color: rgba(0,0,0,.15);
+  background: rgba(0,0,0,.06);
+}
+
+/* Put Delete on full row (prevents cutting) */
+.card__actions .chip-btn--danger {
+  grid-column: 1 / -1;
+}

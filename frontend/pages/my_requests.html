@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>My Requests</title>
+  <link rel="stylesheet" href="../css/index.css" />
+  <link rel="stylesheet" href="../css/chat.css" />
+  <link rel="stylesheet" href="../css/components/cards.css" />
+  <link rel="stylesheet" href="../css/result.css" />
+  <link rel="stylesheet" href="../css/my_requests.css" />
+</head>
+<body class="results-body">
+    <header class="chat-header results-navbar">
+        <div class="container chat-header-inner">
+          <div class="chat-left">
+            <a class="chat-brand" href="../index.html" aria-label="CareMatch home">
+              <span>CareMatch</span>
+            </a>
+          </div>
+      
+          <nav class="chat-top-actions" aria-label="My Requests navigation">
+            <div class="chat-controls" role="group" aria-label="Actions">
+              <a class="chip-btn" href="result.html">Back to Results</a>
+              <button id="logoutBtn" class="chip-btn" type="button">Logout</button>
+            </div>
+          </nav>
+        </div>
+      </header>
+
+      <main class="results-page">
+        <div class="container">
+          <section class="results-head">
+            <h1 class="results-title">My Requests</h1>
+          </section>
+      
+          <section class="results-section">
+            <div class="filters-row">
+              <label>Status:</label>
+              <select id="statusFilter">
+                <option value="all">All</option>
+                <option value="open">Open</option>
+                <option value="in_progress">Pending</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
+      
+            <div class="cards-panel">
+                <ul id="myList" class="cards-grid" aria-label="My requests list"></ul>
+            </div>
+          </section>
+        </div>
+      </main>
+
+  <script type="module" src="../js/my_requests.js"></script>
+</body>
+</html>
