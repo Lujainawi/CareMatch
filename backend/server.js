@@ -346,8 +346,8 @@ app.post('/api/auth/email/verify', async (req, res) => {
           "SELECT id, email, role FROM users WHERE id=? LIMIT 1",
           [userId]
         );
-        req.session.userId = u.id;                 // לשמור תאימות לקוד הקיים (requireAuth)
-        req.session.user = { id: u.id, email: u.email, role: u.role }; // ✅ זה מה שצריך
+        req.session.userId = u.id;              
+        req.session.user = { id: u.id, email: u.email, role: u.role }; 
          return res.json({ ok: true });
         });
         return;
@@ -958,7 +958,7 @@ app.post("/api/requests/:id/contact", requireAuth, async (req, res) => {
       return res.status(400).json({ message: "Invalid message." });
     }
 
-    // 1) Get request
+    // 1) Load request
     const [[reqRow]] = await db.query(
       `SELECT id, user_id, title, region, category, status
        FROM requests
@@ -967,11 +967,17 @@ app.post("/api/requests/:id/contact", requireAuth, async (req, res) => {
       [requestId]
     );
     if (!reqRow) return res.status(404).json({ message: "Request not found." });
+
     if (reqRow.status === "closed") {
       return res.status(400).json({ message: "This request is closed." });
     }
 
-    // 2) Get owner (responsible) email
+    // ✅ Lock after first: only allow if status === open
+    if (reqRow.status !== "open") {
+      return res.status(409).json({ message: "This request is pending decision." });
+    }
+
+    // 2) Owner email
     const [[owner]] = await db.query(
       `SELECT email, full_name
        FROM users
@@ -981,7 +987,7 @@ app.post("/api/requests/:id/contact", requireAuth, async (req, res) => {
     );
     if (!owner?.email) return res.status(500).json({ message: "Request owner email not found." });
 
-    // 3) (Optional) get donor details from DB if you want trustworthy sender info
+    // 3) Donor from session (optional)
     const [[donor]] = await db.query(
       `SELECT email, full_name
        FROM users
@@ -1000,20 +1006,125 @@ app.post("/api/requests/:id/contact", requireAuth, async (req, res) => {
       message,
     };
 
-    await sendVolunteerInterestEmail(owner.email, payload);
+    // ✅ 4) Atomic update: save pending volunteer + set in_progress only if still open
+    const [upd] = await db.query(
+      `UPDATE requests
+       SET status = 'in_progress',
+           pending_volunteer_name  = ?,
+           pending_volunteer_email = ?,
+           pending_volunteer_phone = ?,
+           pending_volunteer_msg   = ?,
+           pending_volunteer_at    = NOW()
+       WHERE id = ? AND status = 'open'`,
+      [
+        payload.donorName,
+        payload.donorEmail,
+        payload.donorPhone,
+        payload.message,
+        requestId
+      ]
+    );
 
-    // 4) Optional: mark request as in_progress after first interest
-    if (reqRow.status === "open") {
-      await db.query(`UPDATE requests SET status='in_progress' WHERE id=?`, [requestId]);
+    // If 0 rows updated => someone else locked it first
+    if (!upd.affectedRows) {
+      return res.status(409).json({ message: "This request is pending decision." });
     }
 
-    return res.json({ ok: true });
+    // 5) Send email (if this fails, rollback the lock so the request isn't stuck)
+    try {
+      await sendVolunteerInterestEmail(owner.email, payload);
+    } catch (mailErr) {
+      console.error("sendVolunteerInterestEmail failed:", mailErr);
+
+      await db.query(
+        `UPDATE requests
+         SET status='open',
+             pending_volunteer_name=NULL,
+             pending_volunteer_email=NULL,
+             pending_volunteer_phone=NULL,
+             pending_volunteer_msg=NULL,
+             pending_volunteer_at=NULL
+         WHERE id=? AND status='in_progress'`,
+        [requestId]
+      );
+
+      return res.status(500).json({ message: "Could not send email. Please try again." });
+    }
+
+    return res.json({ ok: true, status: "in_progress" });
   } catch (err) {
     console.error("POST /api/requests/:id/contact error:", err);
     return res.status(500).json({ message: "Something went wrong." });
   }
 });
 
+async function requireOwnerOrAdmin(req, res, next) {
+  try {
+    const requestId = Number(req.params.id);
+    if (!Number.isFinite(requestId) || requestId <= 0) {
+      return res.status(400).json({ message: "Invalid request id." });
+    }
+
+    const [[row]] = await db.query(
+      "SELECT id, user_id, status FROM requests WHERE id=? LIMIT 1",
+      [requestId]
+    );
+    if (!row) return res.status(404).json({ message: "Request not found." });
+
+    const isOwner = Number(row.user_id) === Number(req.session.userId);
+    const isAdmin = req.session?.user?.role === "admin";
+
+    if (!isOwner && !isAdmin) return res.status(403).json({ message: "Not allowed." });
+
+    // keep for later use
+    req._reqRow = row;
+    next();
+  } catch (e) {
+    console.error("requireOwnerOrAdmin error:", e);
+    return res.status(500).json({ message: "Server error." });
+  }
+}
+
+// ACCEPT: close the request (it will disappear from open lists)
+app.post("/api/requests/:id/accept", requireAuth, requireOwnerOrAdmin, async (req, res) => {
+  const requestId = Number(req.params.id);
+
+  if (req._reqRow.status !== "in_progress") {
+    return res.status(400).json({ message: "Request is not pending." });
+  }
+
+  await db.query(
+    `UPDATE requests
+     SET status='closed'
+     WHERE id=? AND status='in_progress'`,
+    [requestId]
+  );
+
+  return res.json({ ok: true, status: "closed" });
+});
+
+// REJECT: reopen + clear pending volunteer fields
+app.post("/api/requests/:id/reject", requireAuth, requireOwnerOrAdmin, async (req, res) => {
+  const requestId = Number(req.params.id);
+
+  if (req._reqRow.status !== "in_progress") {
+    return res.status(400).json({ message: "Request is not pending." });
+  }
+
+  await db.query(
+    `UPDATE requests
+     SET status='open',
+         pending_volunteer_name=NULL,
+         pending_volunteer_email=NULL,
+         pending_volunteer_phone=NULL,
+         pending_volunteer_msg=NULL,
+         pending_volunteer_at=NULL
+     WHERE id=? AND status='in_progress'`,
+    [requestId]
+  );
+
+  return res.json({ ok: true, status: "open" });
+});
 
 // POST /api/auth/password/forgot
 app.post('/api/auth/password/forgot', resetLimiter, async (req, res) => {

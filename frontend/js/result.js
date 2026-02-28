@@ -333,14 +333,14 @@ function renderTopicButtons({ initialTopic, onChange }) {
 
     rowsById = new Map();
 
-    const myRows = await fetchRequests({ ...base, mine: "1", status: "open" });
+    const myRows = await fetchRequests({ ...base, mine: "1", status: "all" });
     myRows.forEach(r => rowsById.set(r.id, r));  
     
     $("mySection").hidden = true;
     myList.innerHTML = "";
     if (myRows.length) {
       $("mySection").hidden = false;
-      renderList(myList, myRows, { canDelete: true });
+      renderList(myList, myRows, { canDelete: true, canManage: true });
     }      
   
     const allRows = await fetchRequests({ ...base });
@@ -407,8 +407,35 @@ function renderTopicButtons({ initialTopic, onChange }) {
       await load();
     });
   }
-  
   attachDeleteClick($("myList"));
+
+  function attachManageClick(listEl) {
+    if (!listEl) return;
+    listEl.addEventListener("click", async (e) => {
+      const accept = e.target.closest('button[data-action="accept"]');
+      const reject = e.target.closest('button[data-action="reject"]');
+      if (!accept && !reject) return;
+  
+      const card = e.target.closest(".card");
+      const id = card?.dataset?.requestId;
+      if (!id) return;
+  
+      const url = accept
+        ? `/api/requests/${encodeURIComponent(id)}/accept`
+        : `/api/requests/${encodeURIComponent(id)}/reject`;
+  
+      const res = await fetch(url, { method: "POST", credentials: "include" });
+      const data = await res.json().catch(() => ({}));
+  
+      if (!res.ok) {
+        alert(data?.message || "Action failed.");
+        return;
+      }
+  
+      await load(); // refresh lists
+    });
+  }
+  attachManageClick($("myList"));
   
 
   form?.addEventListener("submit", async (e) => {
@@ -440,7 +467,9 @@ function renderTopicButtons({ initialTopic, onChange }) {
       return;
     }
   
-    statusEl.textContent = "Sent! ✅";
+    statusEl.textContent = "Sent! Waiting for decision...";
+    setTimeout(() => dialog?.close(), 600);
+    await load();
   });  
   
 

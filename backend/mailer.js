@@ -83,7 +83,11 @@ async function sendPasswordResetEmail(toEmail, resetUrl) {
   return transporter.sendMail({ from, to: toEmail, subject, text });
 }
 
-module.exports = { sendVerificationEmail, sendPasswordResetEmail };
+module.exports = {
+  sendVerificationEmail,
+  sendPasswordResetEmail,
+  sendVolunteerInterestEmail,
+};
 
 async function sendVolunteerInterestEmail(toEmail, payload) {
   if (!toEmail || !String(toEmail).trim()) {

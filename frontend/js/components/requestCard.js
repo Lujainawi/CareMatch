@@ -66,6 +66,23 @@ export function createRequestCard(data) {
     actions.appendChild(delBtn);
   }
   
+  // Accept/Reject only for owner when pending
+  if (data.canManage && data.status === "in_progress") {
+    const acceptBtn = document.createElement("button");
+    acceptBtn.type = "button";
+    acceptBtn.className = "btn btn-primary";
+    acceptBtn.textContent = "Accept";
+    acceptBtn.dataset.action = "accept";
+    actions.appendChild(acceptBtn);
+
+    const rejectBtn = document.createElement("button");
+    rejectBtn.type = "button";
+    rejectBtn.className = "btn btn-ghost";
+    rejectBtn.textContent = "Reject";
+    rejectBtn.dataset.action = "reject";
+    actions.appendChild(rejectBtn);
+  }
+
   // Assemble the card
   body.append(meta, title, tags, desc, actions);
   li.append(img, body);
