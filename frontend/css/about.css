@@ -159,10 +159,10 @@
   .team__img{
     width: 100%;
     aspect-ratio: 1 / 1;
-    object-fit: cover;
-    border-radius: 0; 
-    border: 1px solid var(--border);
+    object-fit: contain;  
+    display: block;
     background: rgba(255,255,255,0.35);
+    border: 1px solid var(--border);
   }
   
   .team__name{
