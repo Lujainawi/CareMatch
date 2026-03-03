@@ -10,21 +10,37 @@
 
   <!-- Admin styles -->
   <link rel="stylesheet" href="../css/admin.css" />
+  
+  <!-- Reuse chat and result styles -->
+  <link rel="stylesheet" href="../css/chat.css" />
+  <link rel="stylesheet" href="../css/result.css" />
 </head>
 
 <body>
-  <main class="admin-wrap">
-    <header class="admin-header">
-      <div>
-        <h1 class="admin-title">Admin Dashboard</h1>
-        <p class="admin-subtitle">Internal view for CareMatch administrators.</p>
+  <header class="chat-header results-navbar">
+    <div class="container chat-header-inner">
+      <div class="chat-left">
+        <a class="chat-brand" href="../index.html" aria-label="CareMatch home">
+          <span>CareMatch</span>
+        </a>
       </div>
 
-      <div class="admin-actions">
-        <a class="btn btn-ghost" href="result.html">Back to Results</a>
-        <button id="logoutBtn" class="btn btn-primary" type="button">Logout</button>
-      </div>
-    </header>
+      <nav class="chat-top-actions" aria-label="Admin navigation">
+        <div class="chat-controls" role="group" aria-label="Actions">
+          <a class="chip-btn" href="chat.html">Back to chat</a>
+          <a class="chip-btn" href="my_requests.html">My Requests</a>
+          <a id="adminLink" class="chip-btn" href="admin.html" hidden>Admin</a>
+          <button id="logoutBtn" class="chip-btn" type="button">Logout</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="admin-wrap">
+    <section class="admin-hero">
+      <h1 class="admin-title">Admin Dashboard</h1>
+      <p class="admin-subtitle">Internal view for CareMatch administrators.</p>
+    </section>
 
     <section class="admin-section">
       <div class="section-head">

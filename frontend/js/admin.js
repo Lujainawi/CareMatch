@@ -2,6 +2,17 @@ function $(id) {
   return document.getElementById(id);
 }
 
+async function wireAdminLink() {
+  const adminLink = $("adminLink");
+  if (!adminLink) return;
+
+  const res = await fetch("/api/auth/me", { credentials: "include" });
+  if (!res.ok) return;
+
+  const me = await res.json();
+  if (me?.role === "admin") adminLink.hidden = false;
+}
+
 function formatMoneyILS(n) {
   const x = Number(n);
   if (!Number.isFinite(x)) return "—";
@@ -70,6 +81,8 @@ const labels = rows.map(r => prettyMonth(r.ym));
   });
 }
 
+
+
 async function loadRequestsByRegionChart() {
   const res = await fetch("/api/admin/charts/requests-by-region", { credentials: "include" });
   if (res.status === 401 || res.status === 403) return (window.location.href = "results.html");
@@ -128,6 +141,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadRequestsByRegionChart();
   await wireLogout();
   await loadUsers();
+  await wireAdminLink();
 });
 
 function showToast(msg) {
