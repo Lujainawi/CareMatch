@@ -1,128 +1,137 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CareMatch Admin</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CareMatch Admin</title>
 
-  <!-- Base styles -->
-  <link rel="stylesheet" href="../css/index.css" />
+    <!-- Base styles -->
+    <link rel="stylesheet" href="../css/index.css" />
 
-  <!-- Admin styles -->
-  <link rel="stylesheet" href="../css/admin.css" />
-  
-  <!-- Reuse chat and result styles -->
-  <link rel="stylesheet" href="../css/chat.css" />
-  <link rel="stylesheet" href="../css/result.css" />
-</head>
+    <!-- Admin styles -->
+    <link rel="stylesheet" href="../css/admin.css" />
 
-<body>
-  <header class="chat-header results-navbar">
-    <div class="container chat-header-inner">
-      <div class="chat-left">
-        <a class="chat-brand" href="../index.html" aria-label="CareMatch home">
-          <span>CareMatch</span>
-        </a>
-      </div>
+    <!-- Reuse chat and result styles -->
+    <link rel="stylesheet" href="../css/chat.css" />
+    <link rel="stylesheet" href="../css/result.css" />
+  </head>
 
-      <nav class="chat-top-actions" aria-label="Admin navigation">
-        <div class="chat-controls" role="group" aria-label="Actions">
-          <a class="chip-btn" href="chat.html">Back to chat</a>
-          <a class="chip-btn" href="my_requests.html">My Requests</a>
-          <a id="adminLink" class="chip-btn" href="admin.html" hidden>Admin</a>
-          <button id="logoutBtn" class="chip-btn" type="button">Logout</button>
+  <body>
+    <header class="chat-header results-navbar">
+      <div class="container chat-header-inner">
+        <div class="chat-left">
+          <a
+            class="chat-brand"
+            href="../index.html"
+            aria-label="CareMatch home"
+          >
+            <span>CareMatch</span>
+          </a>
         </div>
-      </nav>
-    </div>
-  </header>
 
-  <main class="admin-wrap">
-    <section class="admin-hero">
-      <h1 class="admin-title">Admin Dashboard</h1>
-      <p class="admin-subtitle">Internal view for CareMatch administrators.</p>
-    </section>
-
-    <section class="admin-section">
-      <div class="section-head">
-        <h2 class="section-title">KPIs</h2>
-        <p id="adminStatus" class="muted"></p>
+        <nav class="chat-top-actions" aria-label="Admin navigation">
+          <div class="chat-controls" role="group" aria-label="Actions">
+            <a class="chip-btn" href="chat.html">Back to chat</a>
+            <a class="chip-btn" href="my_requests.html">My Requests</a>
+            <a id="adminLink" class="chip-btn" href="admin.html" hidden
+              >Admin</a
+            >
+            <button id="logoutBtn" class="chip-btn" type="button">
+              Logout
+            </button>
+          </div>
+        </nav>
       </div>
+    </header>
 
-      <div class="kpi-grid">
-        <article class="kpi-card">
-          <p class="kpi-title">Total Donations (₪)</p>
-          <p id="kpiTotalDonations" class="kpi-value">—</p>
-        </article>
+    <main class="admin-wrap">
+      <section class="admin-hero">
+        <h1 class="admin-title">Admin Dashboard</h1>
+        <p class="admin-subtitle">
+          Internal view for CareMatch administrators.
+        </p>
+      </section>
 
-        <article class="kpi-card">
-          <p class="kpi-title">Total Requests</p>
-          <p id="kpiTotalRequests" class="kpi-value">—</p>
-        </article>
+      <section class="admin-section">
+        <div class="section-head">
+          <h2 class="section-title">KPIs</h2>
+          <p id="adminStatus" class="muted"></p>
+        </div>
 
-        <article class="kpi-card">
-          <p class="kpi-title">Organizations</p>
-          <p id="kpiTotalOrganizations" class="kpi-value">—</p>
-        </article>
-      </div>
-    </section>
-    <section class="admin-section">
+        <div class="kpi-grid">
+          <article class="kpi-card">
+            <p class="kpi-title">Total Donations (₪)</p>
+            <p id="kpiTotalDonations" class="kpi-value">—</p>
+          </article>
+
+          <article class="kpi-card">
+            <p class="kpi-title">Total Requests</p>
+            <p id="kpiTotalRequests" class="kpi-value">—</p>
+          </article>
+
+          <article class="kpi-card">
+            <p class="kpi-title">Organizations</p>
+            <p id="kpiTotalOrganizations" class="kpi-value">—</p>
+          </article>
+        </div>
+      </section>
+      <section class="admin-section">
         <h2 class="section-title">Charts</h2>
         <div class="charts-grid">
-            <div class="chart-card">
-                <h3 class="chart-title">Donations by Month</h3>
-                <canvas id="donationsChart"></canvas>
-            </div>
-            <div class="chart-card">
-                <h3 class="chart-title">Requests by Region</h3>
-                <canvas id="regionChart"></canvas>
-            </div>
+          <div class="chart-card">
+            <h3 class="chart-title">Donations by Month</h3>
+            <canvas id="donationsChart"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3 class="chart-title">Requests by Region</h3>
+            <canvas id="regionChart"></canvas>
+          </div>
         </div>
-    </section>
-    <section class="admin-section">
-  <div class="section-head">
-    <h2 class="section-title">Users</h2>
-    <p id="usersStatus" class="muted"></p>
-  </div>
+      </section>
+      <section class="admin-section">
+        <div class="section-head">
+          <h2 class="section-title">Users</h2>
+          <p id="usersStatus" class="muted"></p>
+        </div>
 
-  <div class="table-wrap">
-    <table class="admin-table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Role</th>
-          <th>Region</th>
-          <th>Requests</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="usersTbody"></tbody>
-    </table>
-  </div>
-</section>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Region</th>
+                <th>Requests</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersTbody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+    <!-- Confirm modal -->
+    <dialog id="confirmDialog" class="cm-dialog">
+      <form method="dialog" class="cm-dialog-inner">
+        <h3 id="confirmTitle" class="cm-dialog-title">Confirm</h3>
+        <p id="confirmText" class="cm-dialog-text">Are you sure?</p>
 
+        <div class="cm-dialog-actions">
+          <button id="confirmCancel" class="btn btn-ghost" value="cancel">
+            Cancel
+          </button>
+          <button id="confirmOk" class="btn btn-danger" value="ok">
+            Delete
+          </button>
+        </div>
+      </form>
+    </dialog>
 
-</main>
-<!-- Confirm modal -->
-<dialog id="confirmDialog" class="cm-dialog">
-  <form method="dialog" class="cm-dialog-inner">
-    <h3 id="confirmTitle" class="cm-dialog-title">Confirm</h3>
-    <p id="confirmText" class="cm-dialog-text">Are you sure?</p>
+    <!-- Toast -->
+    <div id="toast" class="cm-toast" hidden></div>
 
-    <div class="cm-dialog-actions">
-      <button id="confirmCancel" class="btn btn-ghost" value="cancel">Cancel</button>
-      <button id="confirmOk" class="btn btn-danger" value="ok">Delete</button>
-    </div>
-  </form>
-</dialog>
-
-
-<!-- Toast -->
-<div id="toast" class="cm-toast" hidden></div>
-
-
- <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
- <script type="module" src="../js/admin.js"></script>
-
-</body>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script type="module" src="../js/admin.js"></script>
+  </body>
 </html>

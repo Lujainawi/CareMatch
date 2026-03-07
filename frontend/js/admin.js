@@ -36,7 +36,9 @@ async function loadMetrics() {
 
     $("kpiTotalDonations").textContent = formatMoneyILS(data.totalDonations);
     $("kpiTotalRequests").textContent = String(data.totalRequests ?? "—");
-    $("kpiTotalOrganizations").textContent = String(data.totalOrganizations ?? "—");
+    $("kpiTotalOrganizations").textContent = String(
+      data.totalOrganizations ?? "—",
+    );
 
     if (status) status.textContent = "";
   } catch (e) {
@@ -48,23 +50,26 @@ let donationsChartInstance = null;
 let regionChartInstance = null;
 
 async function loadDonationsByMonthChart() {
-  const res = await fetch("/api/admin/charts/donations-by-month", { credentials: "include" });
-  if (res.status === 401 || res.status === 403) return (window.location.href = "results.html");
+  const res = await fetch("/api/admin/charts/donations-by-month", {
+    credentials: "include",
+  });
+  if (res.status === 401 || res.status === 403)
+    return (window.location.href = "results.html");
   if (!res.ok) throw new Error("Failed donations chart");
 
   const data = await res.json();
   const rows = data.rows || [];
 
   function prettyMonth(ym) {
-  // ym: "2026-01"
-  const [y, m] = String(ym).split("-");
-  const d = new Date(Number(y), Number(m) - 1, 1);
-  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
-}
+    // ym: "2026-01"
+    const [y, m] = String(ym).split("-");
+    const d = new Date(Number(y), Number(m) - 1, 1);
+    return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  }
 
-const labels = rows.map(r => prettyMonth(r.ym));
+  const labels = rows.map((r) => prettyMonth(r.ym));
 
-  const values = rows.map(r => Number(r.total || 0));
+  const values = rows.map((r) => Number(r.total || 0));
 
   const ctx = document.getElementById("donationsChart");
   if (!ctx) return;
@@ -75,32 +80,33 @@ const labels = rows.map(r => prettyMonth(r.ym));
     type: "bar",
     data: {
       labels,
-      datasets: [{ label: "₪", data: values }]
+      datasets: [{ label: "₪", data: values }],
     },
-    options: { responsive: true }
+    options: { responsive: true },
   });
 }
 
-
-
 async function loadRequestsByRegionChart() {
-  const res = await fetch("/api/admin/charts/requests-by-region", { credentials: "include" });
-  if (res.status === 401 || res.status === 403) return (window.location.href = "results.html");
+  const res = await fetch("/api/admin/charts/requests-by-region", {
+    credentials: "include",
+  });
+  if (res.status === 401 || res.status === 403)
+    return (window.location.href = "results.html");
   if (!res.ok) throw new Error("Failed region chart");
 
   const data = await res.json();
   const rows = data.rows || [];
 
   const regionName = {
-  north: "North",
-  center: "Center",
-  south: "South",
-  jerusalem: "Jerusalem",
-  east: "East",
-};
+    north: "North",
+    center: "Center",
+    south: "South",
+    jerusalem: "Jerusalem",
+    east: "East",
+  };
 
-  const labels = rows.map(r => regionName[r.region] || r.region);
-  const values = rows.map(r => Number(r.cnt || 0));
+  const labels = rows.map((r) => regionName[r.region] || r.region);
+  const values = rows.map((r) => Number(r.cnt || 0));
 
   const ctx = document.getElementById("regionChart");
   if (!ctx) return;
@@ -108,22 +114,21 @@ async function loadRequestsByRegionChart() {
   if (regionChartInstance) regionChartInstance.destroy();
 
   regionChartInstance = new Chart(ctx, {
-  type: "bar",
-  data: {
-    labels,
-    datasets: [{ label: "Requests", data: values }]
-  },
-  options: {
-    responsive: true,
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: { precision: 0 }
-      }
-    }
-  }
-});
-
+    type: "bar",
+    data: {
+      labels,
+      datasets: [{ label: "Requests", data: values }],
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { precision: 0 },
+        },
+      },
+    },
+  });
 }
 
 async function wireLogout() {
@@ -171,7 +176,6 @@ function confirmModal({ title, text, okText = "OK" }) {
   });
 }
 
-
 async function loadUsers() {
   const status = document.getElementById("usersStatus");
   const tbody = document.getElementById("usersTbody");
@@ -181,7 +185,8 @@ async function loadUsers() {
     if (status) status.textContent = "Loading…";
 
     const res = await fetch("/api/admin/users", { credentials: "include" });
-    if (res.status === 401 || res.status === 403) return (window.location.href = "results.html");
+    if (res.status === 401 || res.status === 403)
+      return (window.location.href = "results.html");
     if (!res.ok) throw new Error("Failed to load users");
 
     const data = await res.json();
@@ -189,13 +194,14 @@ async function loadUsers() {
 
     const subject = encodeURIComponent("CareMatch");
 
-tbody.innerHTML = rows.map(u => {
-  const to = encodeURIComponent(u.email || "");
-  const mailHref = u.email
-    ? `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${subject}`
-    : "#";
+    tbody.innerHTML = rows
+      .map((u) => {
+        const to = encodeURIComponent(u.email || "");
+        const mailHref = u.email
+          ? `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${subject}`
+          : "#";
 
-  return `
+        return `
     <tr>
       <td>${escapeHtml(u.full_name || "")}</td>
       <td>${escapeHtml(u.email || "")}</td>
@@ -209,12 +215,11 @@ tbody.innerHTML = rows.map(u => {
       </td>
     </tr>
   `;
-}).join("");
-
-
+      })
+      .join("");
 
     // bind delete buttons
-    tbody.querySelectorAll("button[data-del]").forEach(btn => {
+    tbody.querySelectorAll("button[data-del]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const id = btn.getAttribute("data-del");
         await deleteUser(id);
@@ -230,14 +235,18 @@ tbody.innerHTML = rows.map(u => {
 
 async function deleteUser(id) {
   const ok = await confirmModal({
-  title: "Delete user?",
-  text: "This will delete the user and all their requests.",
-  okText: "Delete"
-});
+    title: "Delete user?",
+    text: "This will delete the user and all their requests.",
+    okText: "Delete",
+  });
   if (!ok) return;
 
-  const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE", credentials: "include" });
-  if (res.status === 401 || res.status === 403) return (window.location.href = "results.html");
+  const res = await fetch(`/api/admin/users/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (res.status === 401 || res.status === 403)
+    return (window.location.href = "results.html");
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     showToast(data.message || "Delete failed.");
@@ -247,8 +256,15 @@ async function deleteUser(id) {
 }
 
 function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-  }[c]));
+  return String(s).replace(
+    /[&<>"']/g,
+    (c) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;",
+      })[c],
+  );
 }
-

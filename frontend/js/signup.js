@@ -2,14 +2,14 @@
  * @file signup.js
  * @description Handles the user registration process, including complex form validation,
  * secure API communication for account creation, and email verification via OTP modal.
- * @notes 
+ * @notes
  * - Uses a multi-step flow: Registration -> Token Receipt -> OTP Verification.
  * - Implements real-time validation feedback on 'blur' and 'input' events.
  * - Manages session-based verification tokens using sessionStorage.
  */
 (function () {
   // ---------- DOM ----------
-   // We grab references to the form inputs and error placeholders to show validation messages.
+  // We grab references to the form inputs and error placeholders to show validation messages.
   const form = document.getElementById("signupForm");
 
   const fullName = document.getElementById("fullName");
@@ -18,7 +18,9 @@
   const confirmPassword = document.getElementById("confirmPassword");
 
   const togglePassword = document.getElementById("togglePassword");
-  const toggleConfirmPassword = document.getElementById("toggleConfirmPassword");
+  const toggleConfirmPassword = document.getElementById(
+    "toggleConfirmPassword",
+  );
   // ---------- DOM Elements : Error Messages ----------
   const fullNameError = document.getElementById("fullNameError");
   const emailError = document.getElementById("emailError");
@@ -34,7 +36,7 @@
   const verifyBtn = document.getElementById("verifyBtn");
   const resendBtn = document.getElementById("resendBtn");
   const resendTimerEl = document.getElementById("resendTimer");
-   
+
   //Sanity check - ensure all elements exist
   if (!form || !fullName || !email || !password || !confirmPassword) return;
 
@@ -67,7 +69,9 @@
    * @returns {string} Trimmed and lowercased email.
    */
   function normalizeEmail(val) {
-    return String(val || "").trim().toLowerCase();
+    return String(val || "")
+      .trim()
+      .toLowerCase();
   }
 
   // ---------- Password toggle ----------
@@ -91,6 +95,35 @@
   setupToggle(togglePassword, password);
   setupToggle(toggleConfirmPassword, confirmPassword);
 
+  // ---------- Password toggle with eye icon ----------
+  function setupToggle(btn, input) {
+    if (!btn || !input) return;
+
+    btn.addEventListener("click", () => {
+      const isPassword = input.type === "password";
+
+      input.type = isPassword ? "text" : "password";
+      btn.setAttribute("aria-pressed", String(isPassword));
+      btn.setAttribute(
+        "aria-label",
+        isPassword ? "Hide password" : "Show password",
+      );
+
+      const openEye = btn.querySelector(".eye-open");
+      const closedEye = btn.querySelector(".eye-closed");
+
+      if (openEye && closedEye) {
+        openEye.style.display = isPassword ? "none" : "block";
+        closedEye.style.display = isPassword ? "block" : "none";
+      }
+
+      input.focus();
+    });
+  }
+
+  setupToggle(togglePassword, password);
+  setupToggle(toggleConfirmPassword, confirmPassword);
+
   // ---------- Validation Logic ----------
 
   /**
@@ -105,7 +138,11 @@
     }
     // Simple rule: require at least 2 words
     if (val.split(/\s+/).length < 2) {
-      setFieldError(fullName, fullNameError, "Please enter first and last name.");
+      setFieldError(
+        fullName,
+        fullNameError,
+        "Please enter first and last name.",
+      );
       return false;
     }
     setFieldError(fullName, fullNameError, "");
@@ -140,27 +177,39 @@
       return false;
     }
     if (val.length < 8) {
-      setFieldError(password, passwordError, "Password must be at least 8 characters.");
+      setFieldError(
+        password,
+        passwordError,
+        "Password must be at least 8 characters.",
+      );
       return false;
     }
     setFieldError(password, passwordError, "");
     return true;
   }
-   
+
   /**
    * @description Validates that the confirm password matches the original password.
    * @returns {boolean}
-   */ 
+   */
   function validateConfirmPassword() {
     const a = password.value;
     const b = confirmPassword.value;
 
     if (!b || !b.trim()) {
-      setFieldError(confirmPassword, confirmError, "Please confirm your password.");
+      setFieldError(
+        confirmPassword,
+        confirmError,
+        "Please confirm your password.",
+      );
       return false;
     }
     if (b.length < 8) {
-      setFieldError(confirmPassword, confirmError, "Password must be at least 8 characters.");
+      setFieldError(
+        confirmPassword,
+        confirmError,
+        "Password must be at least 8 characters.",
+      );
       return false;
     }
     if (a !== b) {
@@ -190,7 +239,8 @@
   });
   password.addEventListener("input", () => {
     if (passwordError?.textContent) validatePassword();
-    if (confirmPassword.value && confirmError?.textContent) validateConfirmPassword();
+    if (confirmPassword.value && confirmError?.textContent)
+      validateConfirmPassword();
     clearFormError();
   });
 
@@ -221,7 +271,8 @@
 
   closeEls.forEach((el) => el.addEventListener("click", closeModal));
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && verifyModal?.classList.contains("is-open")) closeModal();
+    if (e.key === "Escape" && verifyModal?.classList.contains("is-open"))
+      closeModal();
   });
 
   // ---------- Resend timer ----------
@@ -229,7 +280,7 @@
   /**
    * @description Starts a countdown timer for the resend button.
    * @param {number} seconds - Number of seconds for the countdown.
-   */ 
+   */
   function startResendTimer(seconds = 60) {
     if (!resendBtn || !resendTimerEl) return;
 
@@ -275,10 +326,10 @@
 
   /**
    * @description Sends the email verification code to the server for validation.
-   * @param {Object} payload - The verification data (verifyToken, code).  
+   * @param {Object} payload - The verification data (verifyToken, code).
    * @returns {Promise<{ok: boolean, status: number, data: Object|null}>} The server response and parsed JSON data.
    * @notes Uses 'credentials: include' to ensure session cookies/headers are handled if provided by the backend.
-   */   
+   */
   async function apiVerifyEmail(payload) {
     const res = await fetch("/api/auth/email/verify", {
       method: "POST",
@@ -297,7 +348,7 @@
 
   /**
    * @description Requests the server to resend the email verification code.
-   * @param {Object} payload - The data containing the verifyToken. 
+   * @param {Object} payload - The data containing the verifyToken.
    * @returns {Promise<{ok: boolean, status: number, data: Object|null}>} The server response and parsed JSON data.
    * @notes Uses 'credentials: include' to ensure session cookies/headers are handled if provided by the backend.
    */
@@ -347,13 +398,16 @@
 
       if (!success) {
         // generic message keeps UX simple and avoids email enumeration
-        if (formError) formError.textContent = "Signup failed. Please try again.";
+        if (formError)
+          formError.textContent = "Signup failed. Please try again.";
         return;
       }
 
       const verifyToken = data?.verifyToken || "";
       if (!verifyToken) {
-        if (formError) formError.textContent = "Signup succeeded, but verification could not start.";
+        if (formError)
+          formError.textContent =
+            "Signup succeeded, but verification could not start.";
         return;
       }
 
@@ -362,7 +416,8 @@
       openModal();
       startResendTimer(60);
     } catch (err) {
-      if (formError) formError.textContent = "Something went wrong. Please try again.";
+      if (formError)
+        formError.textContent = "Something went wrong. Please try again.";
     } finally {
       if (submitBtn) {
         submitBtn.disabled = false;
@@ -389,7 +444,9 @@
 
     const verifyToken = sessionStorage.getItem("verifyToken") || "";
     if (!verifyToken) {
-      modalMsg && (modalMsg.textContent = "Missing verification session. Please sign up again.");
+      modalMsg &&
+        (modalMsg.textContent =
+          "Missing verification session. Please sign up again.");
       return;
     }
 
@@ -398,11 +455,19 @@
     verifyBtn.textContent = "Verifying...";
 
     try {
-      const { ok: success, status, data } = await apiVerifyEmail({ verifyToken, code });
+      const {
+        ok: success,
+        status,
+        data,
+      } = await apiVerifyEmail({ verifyToken, code });
 
       if (!success) {
         // show server message if exists, otherwise generic
-        const msg = data?.message || (status === 429 ? "Too many attempts. Try again later." : "Invalid code.");
+        const msg =
+          data?.message ||
+          (status === 429
+            ? "Too many attempts. Try again later."
+            : "Invalid code.");
         modalMsg && (modalMsg.textContent = msg);
         return;
       }
@@ -412,7 +477,8 @@
       closeModal();
       window.location.href = "../pages/chat.html";
     } catch (err) {
-      modalMsg && (modalMsg.textContent = "Something went wrong. Please try again.");
+      modalMsg &&
+        (modalMsg.textContent = "Something went wrong. Please try again.");
     } finally {
       verifyBtn.disabled = false;
       verifyBtn.textContent = oldText || "Verify";
@@ -425,7 +491,9 @@
 
     const verifyToken = sessionStorage.getItem("verifyToken") || "";
     if (!verifyToken) {
-      modalMsg && (modalMsg.textContent = "Missing verification session. Please sign up again.");
+      modalMsg &&
+        (modalMsg.textContent =
+          "Missing verification session. Please sign up again.");
       return;
     }
 
@@ -434,7 +502,9 @@
     try {
       const { ok: success, data } = await apiResendCode({ verifyToken });
       if (!success) {
-        modalMsg && (modalMsg.textContent = data?.message || "Could not resend. Please try again.");
+        modalMsg &&
+          (modalMsg.textContent =
+            data?.message || "Could not resend. Please try again.");
         resendBtn.disabled = false;
         return;
       }
@@ -442,7 +512,8 @@
       modalMsg && (modalMsg.textContent = "A new code was sent.");
       startResendTimer(60);
     } catch (err) {
-      modalMsg && (modalMsg.textContent = "Something went wrong. Please try again.");
+      modalMsg &&
+        (modalMsg.textContent = "Something went wrong. Please try again.");
       resendBtn.disabled = false;
     }
   });

@@ -1,161 +1,211 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Requests | CareMatch</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Requests | CareMatch</title>
 
-  <link rel="stylesheet" href="../css/index.css" />
-  <link rel="stylesheet" href="../css/chat.css" />
-  <link rel="stylesheet" href="../css/components/cards.css" />
-  <link rel="stylesheet" href="../css/result.css" />
-</head>
+    <link rel="stylesheet" href="../css/index.css" />
+    <link rel="stylesheet" href="../css/chat.css" />
+    <link rel="stylesheet" href="../css/components/cards.css" />
+    <link rel="stylesheet" href="../css/result.css" />
+  </head>
 
-<body class="results-body">
-  <header class="chat-header results-navbar">
-    <div class="container chat-header-inner">
-      <div class="chat-left">
-        <a class="chat-brand" href="../index.html" aria-label="CareMatch home">
-          <span>CareMatch</span>
-        </a>
+  <body class="results-body">
+    <header class="chat-header results-navbar">
+      <div class="container chat-header-inner">
+        <div class="chat-left">
+          <a
+            class="chat-brand"
+            href="../index.html"
+            aria-label="CareMatch home"
+          >
+            <span>CareMatch</span>
+          </a>
+        </div>
+
+        <nav class="chat-top-actions" aria-label="Results navigation">
+          <div class="chat-controls" role="group" aria-label="Actions">
+            <a class="chip-btn" href="chat.html">Back to chat</a>
+            <a class="chip-btn" href="my_requests.html">My Requests</a>
+            <a id="adminLink" class="chip-btn" href="admin.html" hidden
+              >Admin</a
+            >
+            <button id="logoutBtn" class="chip-btn" type="button">
+              Logout
+            </button>
+          </div>
+        </nav>
       </div>
+    </header>
 
-      <nav class="chat-top-actions" aria-label="Results navigation">
-        <div class="chat-controls" role="group" aria-label="Actions">
-          <a class="chip-btn" href="chat.html">Back to chat</a>
-          <a class="chip-btn" href="my_requests.html">My Requests</a>
-          <a id="adminLink" class="chip-btn" href="admin.html" hidden>Admin</a>
-          <button id="logoutBtn" class="chip-btn" type="button">Logout</button>
-        </div>
-      </nav>      
-    </div>
-  </header>
+    <main class="results-page">
+      <div class="container">
+        <section class="results-head">
+          <h1 class="results-title">Requests you can help with</h1>
+          <p id="resultsSub" class="results-sub"></p>
 
-  <main class="results-page">
-    <div class="container">
-      <section class="results-head">
-        <h1 class="results-title">Requests you can help with</h1>
-        <p id="resultsSub" class="results-sub"></p>
-
-        <div class="filters-panel" aria-label="Filters">
-          <div class="filters-top">
-            <div class="filters-title">Filter by topic</div>
-            <p id="filterSummary" class="filters-summary" aria-live="polite"></p>
-          </div>
-
-          <div id="topicFilters" class="filters-row" role="group" aria-label="Topic filters">
-            <!-- buttons rendered by JS -->
-          </div>
-
-          <div class="filters-meta">
-            <div id="activeFilters" class="filters-row" aria-label="Active filters"></div>
-          </div>
-        </div>
-      </section>
-
-      <section class="results-section">
-        <div class="section-head">
-          <span id="resultsCount" class="count-pill" aria-label="Results count"></span>
-        </div>
-
-        <div class="cards-panel">
-          <div id="allEmpty" class="empty-state" hidden>
-            <p class="empty">No matching requests found</p>
-            <p class="empty-hint">Try selecting another topic above.</p>
-          </div>
-
-          <ul id="allList" class="cards-grid" aria-label="All requests list"></ul>
-        </div>
-      </section>
-    </div>
-  </main>
-
-        <!-- Footer -->
-        <footer class="site-footer" id="footer">
-          <div class="container footer-grid">
-            <div class="footer-left">
-              <h3 class="footer-brand">Care Match</h3>
-        
-              <div class="footer-contact">
-                <p class="footer-line">Phone: <a href="tel:+972501234567">+972 50-123-4567</a></p>
-                <p class="footer-line">Email: <a href="mailto:carematch.info@gmail.com">carematch.info@gmail.com</a></p>
-                <p class="footer-line">Location: Galilee, Israel</p>
-              </div>
+          <div class="filters-panel" aria-label="Filters">
+            <div class="filters-top">
+              <div class="filters-title">Filter by topic</div>
+              <p
+                id="filterSummary"
+                class="filters-summary"
+                aria-live="polite"
+              ></p>
             </div>
-        
-            <div class="footer-right">
-              <a class="footer-link" href="privacy.html">Privacy Policy</a>
-              <a class="footer-link" href="accessibility.html">Accessibility Statement</a>
-        
-              <small class="footer-copy">© <span id="yearNow"></span> CareMatch</small>
+
+            <div
+              id="topicFilters"
+              class="filters-row"
+              role="group"
+              aria-label="Topic filters"
+            >
+              <!-- buttons rendered by JS -->
+            </div>
+
+            <div class="filters-meta">
+              <div
+                id="activeFilters"
+                class="filters-row"
+                aria-label="Active filters"
+              ></div>
             </div>
           </div>
-        </footer>
+        </section>
 
-        <dialog id="detailsDialog" class="details-dialog">
-          <form id="detailsForm" class="details-form" novalidate>
-            <div class="details-head">
-              <h3 id="dTitle" class="details-title"></h3>
-              <button id="detailsClose" class="chip-btn" type="button">Close</button>
+        <section class="results-section">
+          <div class="section-head">
+            <span
+              id="resultsCount"
+              class="count-pill"
+              aria-label="Results count"
+            ></span>
+          </div>
+
+          <div class="cards-panel">
+            <div id="allEmpty" class="empty-state" hidden>
+              <p class="empty">No matching requests found</p>
+              <p class="empty-hint">Try selecting another topic above.</p>
             </div>
-        
-            <p id="dMeta" class="details-meta"></p>
-        
-            <img id="dImg" class="details-img" src="" alt="" />
-        
-            <p id="dDesc" class="details-desc"></p>
-        
-            <input id="dRequestId" type="hidden" />
-        
-            <hr class="details-hr" />
-        
-            <h4 class="details-subtitle">Send message to volunteer</h4>
-        
-            <div class="details-grid">
-              <label class="details-label">Name
-                <input id="donorName" class="details-input" type="text" />
-              </label>
-            
-              <label class="details-label">Email
-                <input id="donorEmail" class="details-input" type="email" />
-              </label>
-            
-              <label class="details-label details-label--full">Phone (optional)
-                <input id="donorPhone" class="details-input" type="tel" />
-              </label>              
-            
-              <label class="details-label details-label--full">Message
-                <textarea id="donorMsg" class="details-textarea" rows="4" placeholder="Hi, I want to volunteer. I am available on..."></textarea>
-              </label>
-            </div>
-            
-            <div class="details-actions">
-              <p id="detailsStatus" class="details-status" aria-live="polite"></p>
-              <button class="btn" type="submit">Send message</button>
-            </div>            
-          </form>
-        </dialog> 
-        
-        <!-- Delete confirm dialog -->
-        <dialog id="confirmDialog" class="confirm-dialog">
-          <form method="dialog" class="confirm-form">
-            <div class="confirm-head">
-              <h3 class="confirm-title">Delete request?</h3>
-              <button class="chip-btn" value="cancel" aria-label="Close">✕</button>
-            </div>
-        
-            <p class="confirm-text">
-              Are you sure you want to delete this request? You can’t undo this.
+
+            <ul
+              id="allList"
+              class="cards-grid"
+              aria-label="All requests list"
+            ></ul>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer" id="footer">
+      <div class="container footer-grid">
+        <div class="footer-left">
+          <h3 class="footer-brand">Care Match</h3>
+
+          <div class="footer-contact">
+            <p class="footer-line">
+              Phone: <a href="tel:+972501234567">+972 50-123-4567</a>
             </p>
-        
-            <div class="confirm-actions">
-              <button class="chip-btn" value="cancel">Cancel</button>
-              <button class="btn btn-danger" value="ok">Delete</button>
-            </div>
-          </form>
-        </dialog>
+            <p class="footer-line">
+              Email:
+              <a href="mailto:carematch.info@gmail.com"
+                >carematch.info@gmail.com</a
+              >
+            </p>
+            <p class="footer-line">Location: Galilee, Israel</p>
+          </div>
+        </div>
 
+        <div class="footer-right">
+          <a class="footer-link" href="privacy.html">Privacy Policy</a>
+          <a class="footer-link" href="accessibility.html"
+            >Accessibility Statement</a
+          >
 
-  <script type="module" src="../js/result.js"></script>
-</body>
+          <small class="footer-copy"
+            >© <span id="yearNow"></span> CareMatch</small
+          >
+        </div>
+      </div>
+    </footer>
+
+    <dialog id="detailsDialog" class="details-dialog">
+      <form id="detailsForm" class="details-form" novalidate>
+        <div class="details-head">
+          <h3 id="dTitle" class="details-title"></h3>
+          <button id="detailsClose" class="chip-btn" type="button">
+            Close
+          </button>
+        </div>
+
+        <p id="dMeta" class="details-meta"></p>
+
+        <img id="dImg" class="details-img" src="" alt="" />
+
+        <p id="dDesc" class="details-desc"></p>
+
+        <input id="dRequestId" type="hidden" />
+
+        <hr class="details-hr" />
+
+        <h4 class="details-subtitle">Send message to volunteer</h4>
+
+        <div class="details-grid">
+          <label class="details-label"
+            >Name
+            <input id="donorName" class="details-input" type="text" />
+          </label>
+
+          <label class="details-label"
+            >Email
+            <input id="donorEmail" class="details-input" type="email" />
+          </label>
+
+          <label class="details-label details-label--full"
+            >Phone (optional)
+            <input id="donorPhone" class="details-input" type="tel" />
+          </label>
+
+          <label class="details-label details-label--full"
+            >Message
+            <textarea
+              id="donorMsg"
+              class="details-textarea"
+              rows="4"
+              placeholder="Hi, I want to volunteer. I am available on..."
+            ></textarea>
+          </label>
+        </div>
+
+        <div class="details-actions">
+          <p id="detailsStatus" class="details-status" aria-live="polite"></p>
+          <button class="btn" type="submit">Send message</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Delete confirm dialog -->
+    <dialog id="confirmDialog" class="confirm-dialog">
+      <form method="dialog" class="confirm-form">
+        <div class="confirm-head">
+          <h3 class="confirm-title">Delete request?</h3>
+          <button class="chip-btn" value="cancel" aria-label="Close">✕</button>
+        </div>
+
+        <p class="confirm-text">
+          Are you sure you want to delete this request? You can’t undo this.
+        </p>
+
+        <div class="confirm-actions">
+          <button class="chip-btn" value="cancel">Cancel</button>
+          <button class="btn btn-danger" value="ok">Delete</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="../js/result.js"></script>
+  </body>
 </html>

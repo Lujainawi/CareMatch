@@ -1,8 +1,8 @@
 /**
  * @file login.js
- * @description Manages the user authentication process, including form validation, 
+ * @description Manages the user authentication process, including form validation,
  * password visibility toggling, and multi-factor authentication (MFA) logic.
- * @notes 
+ * @notes
  * - Implements OWASP security principles by using generic error messages.
  * - Follows WCAG accessibility standards for form controls and modal management.
  * - Uses session-based tokens for secure multi-step verification flows.
@@ -17,7 +17,6 @@
     }
   } catch {}
 })();
-
 
 (function () {
   // ---- DOM Elements: Form Fields ----
@@ -42,7 +41,8 @@
   const loginResendTimerEl = document.getElementById("loginResendTimer");
 
   // Close buttons inside the modal
-  const loginCloseEls = loginVerifyModal?.querySelectorAll('[data-close="true"]') || [];
+  const loginCloseEls =
+    loginVerifyModal?.querySelectorAll('[data-close="true"]') || [];
 
   // ---- Ensure DOM elements exist before proceeding ----
   if (!form || !email || !password || !toggleBtn) return;
@@ -84,12 +84,13 @@
   }
   loginCloseEls.forEach((el) => el.addEventListener("click", closeLoginModal));
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && loginVerifyModal?.classList.contains("is-open")) closeLoginModal();
+    if (e.key === "Escape" && loginVerifyModal?.classList.contains("is-open"))
+      closeLoginModal();
   });
 
   // ---- MFA Resend timer ----
   let loginResendInterval = null;
-  
+
   /**
    * Manages the countdown for the "Resend Code" button to prevent spam.
    * @param {number} seconds - Countdown duration in seconds.
@@ -114,15 +115,24 @@
     }, 1000);
   }
 
-
-  // ---- Show/Hide password (accessible toggle) ----
+  // ---- Show/Hide password with eye icon ----
   toggleBtn.addEventListener("click", () => {
-    const isShown = password.type === "text";
-    password.type = isShown ? "password" : "text";
+    const isPassword = password.type === "password";
 
-    // Update button state
-    toggleBtn.setAttribute("aria-pressed", String(!isShown));
-    toggleBtn.textContent = isShown ? "Show" : "Hide";
+    password.type = isPassword ? "text" : "password";
+    toggleBtn.setAttribute("aria-pressed", String(isPassword));
+    toggleBtn.setAttribute(
+      "aria-label",
+      isPassword ? "Hide password" : "Show password",
+    );
+
+    const openEye = toggleBtn.querySelector(".eye-open");
+    const closedEye = toggleBtn.querySelector(".eye-closed");
+
+    if (openEye && closedEye) {
+      openEye.style.display = isPassword ? "none" : "block";
+      closedEye.style.display = isPassword ? "block" : "none";
+    }
 
     password.focus();
   });
@@ -162,7 +172,11 @@
 
     // Minimum security threshold: 8 characters
     if (val.length < 8) {
-      setFieldError(password, passwordError, "Password must be at least 8 characters.");
+      setFieldError(
+        password,
+        passwordError,
+        "Password must be at least 8 characters.",
+      );
       return false;
     }
 
@@ -200,7 +214,7 @@
     let data = null;
     try {
       data = await res.json();
-    } catch (_) { }
+    } catch (_) {}
 
     return { ok: res.ok, status: res.status, data };
   }
@@ -215,7 +229,9 @@
     });
 
     let data = null;
-    try { data = await res.json(); } catch (_) { }
+    try {
+      data = await res.json();
+    } catch (_) {}
     return { ok: res.ok, status: res.status, data };
   }
 
@@ -229,12 +245,11 @@
     });
 
     let data = null;
-    try { data = await res.json(); } catch (_) { }
+    try {
+      data = await res.json();
+    } catch (_) {}
     return { ok: res.ok, status: res.status, data };
   }
-
-
-
 
   // ---- Main Form Submit  ----
   form.addEventListener("submit", async (e) => {
@@ -321,7 +336,9 @@
 
     const mfaToken = sessionStorage.getItem("mfaToken") || "";
     if (!mfaToken) {
-      if (loginModalMsg) loginModalMsg.textContent = "Missing verification session. Please log in again.";
+      if (loginModalMsg)
+        loginModalMsg.textContent =
+          "Missing verification session. Please log in again.";
       return;
     }
 
@@ -330,14 +347,20 @@
     loginVerifyBtn.textContent = "Verifying...";
 
     try {
-      const { ok: success, status, data } = await apiMfaVerify({ mfaToken, code });
+      const {
+        ok: success,
+        status,
+        data,
+      } = await apiMfaVerify({ mfaToken, code });
 
       if (!success) {
         const msg =
           data?.message ||
-          (status === 429 ? "Too many attempts. Try again later." :
-            status === 400 ? "Invalid code." :
-              "Something went wrong. Please try again.");
+          (status === 429
+            ? "Too many attempts. Try again later."
+            : status === 400
+              ? "Invalid code."
+              : "Something went wrong. Please try again.");
         if (loginModalMsg) loginModalMsg.textContent = msg;
         return;
       }
@@ -346,13 +369,13 @@
       closeLoginModal();
       window.location.href = "/pages/chat.html";
     } catch (err) {
-      if (loginModalMsg) loginModalMsg.textContent = "Something went wrong. Please try again.";
+      if (loginModalMsg)
+        loginModalMsg.textContent = "Something went wrong. Please try again.";
     } finally {
       loginVerifyBtn.disabled = false;
       loginVerifyBtn.textContent = oldText || "Verify";
     }
   });
-
 
   // ---- MFA Resend Code Handling ----
   loginResendBtn?.addEventListener("click", async () => {
@@ -360,7 +383,9 @@
 
     const mfaToken = sessionStorage.getItem("mfaToken") || "";
     if (!mfaToken) {
-      if (loginModalMsg) loginModalMsg.textContent = "Missing verification session. Please log in again.";
+      if (loginModalMsg)
+        loginModalMsg.textContent =
+          "Missing verification session. Please log in again.";
       return;
     }
 
@@ -370,7 +395,9 @@
       const { ok: success, data } = await apiMfaResend({ mfaToken });
 
       if (!success) {
-        if (loginModalMsg) loginModalMsg.textContent = data?.message || "Could not resend. Please try again.";
+        if (loginModalMsg)
+          loginModalMsg.textContent =
+            data?.message || "Could not resend. Please try again.";
         loginResendBtn.disabled = false;
         return;
       }
@@ -378,9 +405,9 @@
       if (loginModalMsg) loginModalMsg.textContent = "A new code was sent.";
       startLoginResendTimer(60);
     } catch (err) {
-      if (loginModalMsg) loginModalMsg.textContent = "Something went wrong. Please try again.";
+      if (loginModalMsg)
+        loginModalMsg.textContent = "Something went wrong. Please try again.";
       loginResendBtn.disabled = false;
     }
   });
-
-})();  
+})();
